@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DICC India — My Dashboard</title>
+    <meta name="description" content="Your personal hyperlocal disaster alert dashboard">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@700&display=swap"
+        rel="stylesheet" />
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #030912;
+            --bg2: rgba(6, 18, 40, .92);
+            --bg3: rgba(10, 24, 54, .7);
+            --accent: #00d4ff;
+            --success: #00e5a0;
+            --danger: #ff1144;
+            --warn: #ff6600;
+            --txt1: #e0eeff;
+            --txt2: rgba(180, 210, 255, .75);
+            --txt3: rgba(180, 210, 255, .45);
+            --border: rgba(0, 212, 255, .12);
+            --r: 10px;
+            --ease: .2s ease;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden
+        }
+
+        @keyframes iotBannerSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-100%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes iotBannerPulse {
+            from {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            to {
+                transform: scale(1.25);
+                opacity: 0.7;
+            }
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--txt1);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column
+        }
+
+        /* ── TOP BAR ── */
+        #top-bar {
+            height: 54px;
+            flex-shrink: 0;
+            background: rgba(3, 9, 18, .96);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            backdrop-filter: blur(12px);
+            z-index: 200;
+            position: relative;
+            box-shadow: 0 1px 20px rgba(0, 0, 0, .4);
+        }
+
+        .tb-left {
+            display: flex;
+            align-items: center;
+            gap: 14px
+        }
+
+        .tb-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: .85rem;
+            color: var(--accent);
+            letter-spacing: 2px
+        }
+
+        .tb-sep {
+            color: var(--border);
+            font-size: 18px;
+            opacity: .5
+        }
+
+        .tb-location {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 7px;
+            border: 1px solid var(--border);
+            background: rgba(0, 212, 255, .04);
+            transition: all var(--ease)
+        }
+
+        .tb-location:hover {
+            border-color: var(--accent);
+            background: rgba(0, 212, 255, .08)
+        }
+
+        .tb-city {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--txt1)
+        }
+
+        .tb-change {
+            font-size: .65rem;
+            color: var(--accent);
+            margin-top: 1px
+        }
+
+        .tb-right {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .tb-alert-ring {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            background: var(--bg3);
+            font-size: 14px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        #tb-alert-count {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: var(--danger);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            border-radius: 8px;
+            padding: 0 4px;
+            min-width: 14px;
+            text-align: center;
+            display: none;
+        }
+
+        .tb-user {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .tb-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #0055ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #000
+        }
+
+        .tb-name {
+            font-size: .8rem;
+            font-weight: 500;
+            color: var(--txt1)
+        }
+
+        .tb-logout {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 10px;
+            color: var(--txt3);
+            font-size: .72rem;
+            cursor: pointer;
+            transition: all var(--ease);
+            font-family: 'Inter', sans-serif
+        }
+
+        .tb-logout:hover {
+            border-color: var(--danger);
+            color: var(--danger)
+        }
+
+        /* ── MAIN LAYOUT ── */
+        #main {
+            display: flex;
+            flex: 1;
+            overflow: hidden
+        }
+
+        /* ── LEFT SIDEBAR ── */
+        #sidebar {
+            width: 300px;
+            flex-shrink: 0;
+            overflow-y: auto;
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        #sidebar::-webkit-scrollbar {
+            width: 3px
+        }
+
+        #sidebar::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, .15);
+            border-radius: 2px
+        }
+
+        .sb-section {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .sb-title {
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--txt3);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .sb-badge {
+            background: rgba(255, 17, 68, .15);
+            color: var(--danger);
+            font-family: monospace;
+            font-size: 9px;
+            padding: 1px 5px;
+            border-radius: 3px
+        }
+
+        /* Risk Meter */
+        .risk-meter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid var(--border);
+            margin-bottom: 10px
+        }
+
+        .risk-icon {
+            font-size: 28px
+        }
+
+        .risk-info {
+            flex: 1
+        }
+
+        .risk-label {
+            font-size: .72rem;
+            color: var(--txt3);
+            text-transform: uppercase;
+            letter-spacing: .5px
+        }
+
+        .risk-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-top: 2px
+        }
+
+        .risk-value.low {
+            color: var(--success)
+        }
+
+        .risk-value.medium {
+            color: var(--warn)
+        }
+
+        .risk-value.high {
+            color: var(--danger)
+        }
+
+        .risk-dist {
+            font-size: .68rem;
+            color: var(--txt3);
+            margin-top: 2px
+        }
+
+        /* Weather card */
+        .wx-mini {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px
+        }
+
+        .wx-chip {
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 8px 10px;
+            text-align: center
+        }
+
+        .wx-chip-icon {
+            font-size: 18px;
+            display: block;
+            margin-bottom: 3px
+        }
+
+        .wx-chip-val {
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--txt1)
+        }
+
+        .wx-chip-lbl {
+            font-size: .6rem;
+            color: var(--txt3);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-top: 2px
+        }
+
+        .wx-city-name {
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--txt1);
+            margin-bottom: 6px
+        }
+
+        .wx-cond {
+            font-size: .7rem;
+            color: var(--txt2);
+            margin-bottom: 8px
+        }
+
+        /* Disaster feed */
+        .event-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 9px 0;
+            border-bottom: 1px solid rgba(0, 212, 255, .06);
+            cursor: pointer;
+            transition: background var(--ease);
+            border-radius: 6px;
+            padding: 8px 6px;
+        }
+
+        .event-item:hover {
+            background: rgba(0, 212, 255, .04)
+        }
+
+        .event-item:last-child {
+            border-bottom: none
+        }
+
+        .ev-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 4px
+        }
+
+        .ev-info {
+            flex: 1;
+            min-width: 0
+        }
+
+        .ev-title {
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--txt1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .ev-sub {
+            font-size: .66rem;
+            color: var(--txt3);
+            margin-top: 2px
+        }
+
+        .ev-dist {
+            font-size: .66rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-top: 1px
+        }
+
+        .ev-sev {
+            font-size: .6rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            font-family: monospace
+        }
+
+        /* Alert items */
+        .alert-item {
+            display: flex;
+            gap: 9px;
+            padding: 8px;
+            border-radius: 7px;
+            margin-bottom: 6px;
+            background: rgba(255, 255, 255, .02);
+            border: 1px solid rgba(255, 17, 68, .1)
+        }
+
+        .alert-item.unread {
+            border-color: rgba(255, 17, 68, .25);
+            background: rgba(255, 17, 68, .04)
+        }
+
+        .al-icon {
+            font-size: 14px;
+            flex-shrink: 0
+        }
+
+        .al-body {
+            flex: 1;
+            min-width: 0
+        }
+
+        .al-msg {
+            font-size: .72rem;
+            color: var(--txt1);
+            line-height: 1.4
+        }
+
+        .al-meta {
+            font-size: .62rem;
+            color: var(--txt3);
+            margin-top: 3px
+        }
+
+        .al-sev {
+            font-size: .6rem;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            font-family: monospace
+        }
+
+        .sev-HIGH {
+            background: rgba(255, 17, 68, .15);
+            color: var(--danger)
+        }
+
+        .sev-MEDIUM {
+            background: rgba(255, 102, 0, .15);
+            color: var(--warn)
+        }
+
+        .sev-LOW {
+            background: rgba(255, 215, 0, .1);
+            color: #ffd700
+        }
+
+        /* ── MAP ── */
+        #map {
+            flex: 1;
+            z-index: 1
+        }
+
+        /* Leaflet dark overrides */
+        .leaflet-popup-content-wrapper {
+            background: rgba(6, 18, 40, .97);
+            border: 1px solid var(--accent);
+            color: var(--txt1);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, .15)
+        }
+
+        .leaflet-popup-tip {
+            background: rgba(6, 18, 40, .97)
+        }
+
+        .leaflet-popup-content {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            margin: 10px 14px;
+            line-height: 1.5
+        }
+
+        .popup-title {
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--accent);
+            margin-bottom: 4px
+        }
+
+        .popup-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            color: var(--txt2)
+        }
+
+        .leaflet-control-zoom a {
+            background: rgba(6, 18, 40, .9) !important;
+            border-color: var(--border) !important;
+            color: var(--txt1) !important
+        }
+
+        .leaflet-control-attribution {
+            background: rgba(3, 9, 18, .8) !important;
+            color: var(--txt3) !important;
+            font-size: 8px !important
+        }
+
+        .leaflet-control-attribution a {
+            color: var(--accent) !important
+        }
+
+        /* ── LOCATION MODAL ── */
+        #loc-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(1, 5, 16, .88);
+            backdrop-filter: blur(8px);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loc-modal.visible {
+            display: flex
+        }
+
+        .loc-card {
+            background: rgba(6, 18, 40, .97);
+            border: 1px solid var(--accent);
+            border-radius: 14px;
+            padding: 32px;
+            width: 360px;
+            box-shadow: 0 0 60px rgba(0, 212, 255, .12)
+        }
+
+        .loc-card h3 {
+            color: var(--txt1);
+            font-size: 1rem;
+            margin-bottom: 6px
+        }
+
+        .loc-card p {
+            color: var(--txt3);
+            font-size: .78rem;
+            margin-bottom: 20px;
+            line-height: 1.5
+        }
+
+        .loc-input {
+            width: 100%;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 9px 12px;
+            color: var(--txt1);
+            font-size: .85rem;
+            outline: none;
+            transition: border-color var(--ease);
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 10px
+        }
+
+        .loc-input:focus {
+            border-color: var(--accent)
+        }
+
+        .loc-input::placeholder {
+            color: var(--txt3)
+        }
+
+        .loc-btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px
+        }
+
+        .loc-btn {
+            flex: 1;
+            padding: 9px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: .83rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: all var(--ease)
+        }
+
+        .loc-btn-primary {
+            background: var(--accent);
+            color: #000
+        }
+
+        .loc-btn-primary:hover {
+            box-shadow: 0 0 20px rgba(0, 212, 255, .3)
+        }
+
+        .loc-btn-sec {
+            background: rgba(255, 255, 255, .06);
+            color: var(--txt2);
+            border: 1px solid var(--border)
+        }
+
+        .loc-btn-sec:hover {
+            border-color: var(--accent);
+            color: var(--accent)
+        }
+
+        .loc-or {
+            text-align: center;
+            color: var(--txt3);
+            font-size: .72rem;
+            margin: 8px 0
+        }
+
+        /* ── ALERT BANNER ── */
+        #alert-banner {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 20px;
+            background: rgba(255, 17, 68, .1);
+            border: 1px solid var(--danger);
+            border-radius: 28px;
+            backdrop-filter: blur(12px);
+            z-index: 300;
+            max-width: 500px;
+            box-shadow: 0 0 30px rgba(255, 17, 68, .2);
+            animation: slideUp .3s ease;
+            display: none;
+        }
+
+        #alert-banner.show {
+            display: flex
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(16px)
+            }
+        }
+
+        .ab-icon {
+            font-size: 18px;
+            animation: bob .9s ease-in-out infinite alternate
+        }
+
+        @keyframes bob {
+            to {
+                transform: scale(1.2)
+            }
+        }
+
+        .ab-text {
+            flex: 1;
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--danger)
+        }
+
+        .ab-close {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 17px;
+            cursor: pointer
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 24px 12px;
+            color: var(--txt3);
+            font-size: .78rem
+        }
+
+        .empty-icon {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 8px;
+            opacity: .4
+        }
+
+        /* Read all btn */
+        .read-all-btn {
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 212, 255, .2);
+            background: transparent;
+            color: var(--accent);
+            font-size: .65rem;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .read-all-btn:hover {
+            background: rgba(0, 212, 255, .08)
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══ TOP BAR ═══ -->
+    <header id="top-bar">
+        <div class="tb-left">
+            <div class="tb-logo">🌐 DICC</div>
+            <span class="tb-sep">|</span>
+            <div class="tb-location" id="location-btn" title="Change your location">
+                <span>📍</span>
+                <div>
+                    <div class="tb-city" id="tb-city-name">Loading...</div>
+                    <div class="tb-change">tap to change</div>
+                </div>
+            </div>
+        </div>
+        <div class="tb-right">
+            <div class="tb-alert-ring" id="bell-btn" title="View my alerts">
+                🔔 <span id="tb-alert-count">0</span>
+            </div>
+            <div class="tb-user">
+                <div class="tb-avatar" id="tb-avatar">?</div>
+                <div class="tb-name" id="tb-username">Loading</div>
+            </div>
+            <button class="tb-logout" id="logout-btn">Logout</button>
+        </div>
+    </header>
+
+    <!-- ═══ MAIN ═══ -->
+    <div id="main">
+
+        <!-- LEFT SIDEBAR -->
+        <aside id="sidebar">
+
+            <!-- Risk Status -->
+            <div class="sb-section">
+                <div class="sb-title">📊 Your Risk Status</div>
+                <div class="risk-meter">
+                    <div class="risk-icon" id="risk-icon">🟢</div>
+                    <div class="risk-info">
+                        <div class="risk-label">Nearest threat</div>
+                        <div class="risk-value safe" id="risk-value">SAFE</div>
+                        <div class="risk-dist" id="risk-dist">No active threats near you</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Weather -->
+            <div class="sb-section" id="wx-section">
+                <div class="sb-title">🌤️ Current Weather</div>
+                <div id="wx-content">
+                    <div class="empty-state"><span class="empty-icon">☁️</span>Loading weather...</div>
+                </div>
+            </div>
+
+            <!-- Nearby Disasters -->
+            <div class="sb-section">
+                <div class="sb-title">
+                    ⚡ Nearby Disasters
+                    <span class="sb-badge" id="event-count" style="display:none">0</span>
+                </div>
+                <div id="events-list">
+                    <div class="empty-state"><span class="empty-icon">🌍</span>Scanning your area...</div>
+                </div>
+            </div>
+
+            <!-- My Alerts -->
+            <div class="sb-section">
+                <div class="sb-title">
+                    🔔 My Alerts
+                    <span class="sb-badge" id="alert-count" style="display:none">0</span>
+                    <button class="read-all-btn" id="read-all-btn" style="margin-left:auto">✓ Read all</button>
+                </div>
+                <div id="alerts-list">
+                    <div class="empty-state"><span class="empty-icon">🔕</span>No alerts yet</div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- MAP -->
+        <div id="map"></div>
+    </div>
+
+    <!-- ═══ ALERT BANNER ═══ -->
+    <div id="alert-banner">
+        <span class="ab-icon">⚠️</span>
+        <span class="ab-text" id="alert-banner-text">Disaster alert near you!</span>
+        <button class="ab-close" onclick="document.getElementById('alert-banner').classList.remove('show')">×</button>
+    </div>
+
+    <!-- ═══ LOCATION PICKER MODAL ═══ -->
+    <div id="loc-modal">
+        <div class="loc-card" style="width:420px">
+            <h3>📍 Set Your Location</h3>
+            <p>Select your state, district or city. Only disasters in your area will be shown.</p>
+
+            <button class="loc-btn loc-btn-sec" style="width:100%;margin-bottom:10px" id="detect-btn">
+                📡 Auto-detect my location
+            </button>
+            <div class="loc-or">— or choose from India's states, districts & cities —</div>
+
+            <!-- Search box -->
+            <div style="position:relative;margin-bottom:8px">
+                <input type="text" class="loc-input" id="loc-search" style="margin-bottom:0"
+                    placeholder="Search state / district / city..." autocomplete="off" />
+                <div id="loc-dropdown" style="
+                    display:none;position:absolute;top:calc(100%+3px);left:0;right:0;
+                    background:rgba(4,12,32,.98);border:1px solid rgba(0,212,255,.2);
+                    border-radius:8px;max-height:220px;overflow-y:auto;z-index:600;
+                    box-shadow:0 8px 24px rgba(0,0,0,.5);
+                "></div>
+            </div>
+
+            <!-- Cascading state → district -->
+            <select class="loc-input" id="sel-state" style="margin-bottom:6px">
+                <option value="">— Select State / UT —</option>
+            </select>
+            <select class="loc-input" id="sel-district" style="margin-bottom:6px" disabled>
+                <option value="">— Select District —</option>
+            </select>
+            <select class="loc-input" id="sel-city" style="margin-bottom:6px" disabled>
+                <option value="">— Select City (optional) —</option>
+            </select>
+
+            <div id="loc-selected" style="
+                display:none;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);
+                border-radius:7px;padding:8px 12px;font-size:.8rem;color:#00d4ff;
+                margin-bottom:8px;font-weight:600
+            "></div>
+
+            <div class="loc-btns">
+                <button class="loc-btn loc-btn-sec" id="loc-skip-btn">Skip</button>
+                <button class="loc-btn loc-btn-primary" id="loc-save-btn" disabled>Save Location</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/india_geo.js"></script>
+    <script>
+        /* ═══════════════════════════════════════════════════════════
+           DICC Client Dashboard — client_app.js (inline)
+        ═══════════════════════════════════════════════════════════ */
+        (async function ClientApp() {
+
+            /* ── Auth check ─────────────────────────────────────────── */
+            let user = null;
+            try {
+                const r = await fetch('api/user.php', { credentials: 'include' });
+                const d = await r.json();
+                user = d.user;
+            } catch (_) { }
+
+            if (!user) { window.location.replace('auth/login.html'); return; }
+            if (user.role === 'admin') { window.location.replace('index.html'); return; }
+
+            /* ── Set up header ──────────────────────────────────────── */
+            document.getElementById('tb-username').textContent = user.name.split(' ')[0];
+            document.getElementById('tb-avatar').textContent = user.name.charAt(0).toUpperCase();
+            document.getElementById('tb-city-name').textContent = user.city || 'No location set';
+
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                await fetch('api/logout.php', { credentials: 'include' });
+                window.location.replace('auth/login.html');
+            });
+
+            /* ── State ──────────────────────────────────────────────── */
+            let userLat = user.latitude, userLon = user.longitude;
+            let map, userMarker, ringLayers = [], eventMarkers = {};
+            let notifiedIds = new Set();
+            const RADIUS = 150; /* km — show events within this radius */
+
+            /* ── Init map ───────────────────────────────────────────── */
+            const defaultLat = userLat || 20.5937, defaultLon = userLon || 78.9629;
+            const defaultZoom = userLat ? 11 : 5;
+
+            map = L.map('map', {
+                center: [defaultLat, defaultLon], zoom: defaultZoom,
+                zoomControl: true, attributionControl: true,
+            });
+
+            /* Dark map tiles */
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap · © CARTO',
+                maxZoom: 18, subdomains: 'abcd',
+            }).addTo(map);
+
+            /* User location marker + rings */
+            function _placeUserMarker(lat, lon) {
+                if (userMarker) userMarker.remove();
+                ringLayers.forEach(r => r.remove()); ringLayers = [];
+
+                const pulseIcon = L.divIcon({
+                    className: '',
+                    html: `<div style="position:relative;width:20px;height:20px">
+               <div style="position:absolute;inset:0;background:#00d4ff;border-radius:50%;opacity:.85"></div>
+               <div style="position:absolute;inset:-6px;border:2px solid rgba(0,212,255,.4);border-radius:50%;animation:ring 1.5s ease-out infinite"></div>
+             </div>
+             <style>.leaflet-marker-icon div div{animation:ring 1.5s ease-out infinite}
+             @keyframes ring{to{transform:scale(2.5);opacity:0}}</style>`,
+                    iconSize: [20, 20], iconAnchor: [10, 10],
+                });
+                userMarker = L.marker([lat, lon], { icon: pulseIcon })
+                    .bindPopup(`<div class="popup-title">📍 Your Location</div><div style="color:rgba(180,210,255,.6);font-size:11px">${user.city || 'Your location'}</div>`)
+                    .addTo(map);
+
+                /* Radius rings */
+                [[5, 'rgba(255,17,68,.15)', '#ff1144'], [10, 'rgba(255,102,0,.08)', '#ff6600'], [20, 'rgba(255,215,0,.05)', '#ffd700']].forEach(([km, fill, color]) => {
+                    const r = L.circle([lat, lon], {
+                        radius: km * 1000, color, weight: 1, fillColor: fill,
+                        fillOpacity: 1, dashArray: '4,4',
+                    }).addTo(map);
+                    r.bindTooltip(`${km}km alert zone`, { permanent: false, className: 'leaflet-tooltip' });
+                    ringLayers.push(r);
+                });
+            }
+
+            if (userLat && userLon) {
+                _placeUserMarker(userLat, userLon);
+            } else {
+                _showLocationModal();
+            }
+
+            /* ── Location modal with India cascading picker ──────────── */
+            function _showLocationModal() {
+                document.getElementById('loc-modal').classList.add('visible');
+                _initLocPicker();
+            }
+            function _hideLocationModal() {
+                document.getElementById('loc-modal').classList.remove('visible');
+            }
+
+            document.getElementById('location-btn').addEventListener('click', _showLocationModal);
+
+            /* ── Cascading state/district/city picker ── */
+            let _locPicked = null; /* { name, lat, lon } */
+
+            function _initLocPicker() {
+                if (typeof INDIA_GEO === 'undefined') return;
+                const selState = document.getElementById('sel-state');
+                const selDistrict = document.getElementById('sel-district');
+                const selCity = document.getElementById('sel-city');
+                const saveBtn = document.getElementById('loc-save-btn');
+                const selDisplay = document.getElementById('loc-selected');
+
+                /* Populate states */
+                if (selState.options.length <= 1) {
+                    INDIA_GEO.forEach(s => {
+                        const o = document.createElement('option'); o.value = s.state; o.textContent = s.state;
+                        selState.appendChild(o);
+                    });
+                }
+
+                function setSelected(name, lat, lon) {
+                    _locPicked = { name, lat, lon };
+                    selDisplay.textContent = '📍 ' + name; selDisplay.style.display = 'block';
+                    saveBtn.disabled = false;
+                }
+
+                selState.onchange = () => {
+                    const sData = INDIA_GEO.find(s => s.state === selState.value);
+                    selDistrict.innerHTML = '<option value="">— Select District —</option>';
+                    selCity.innerHTML = '<option value="">— Select City (optional) —</option>';
+                    selDistrict.disabled = !sData; selCity.disabled = true;
+                    if (!sData) { _locPicked = null; saveBtn.disabled = true; return; }
+                    sData.districts.forEach(d => {
+                        const o = document.createElement('option'); o.value = d.d; o.textContent = d.d;
+                        selDistrict.appendChild(o);
+                    });
+                    setSelected(sData.state + ', India', sData.lat, sData.lon);
+                };
+
+                selDistrict.onchange = () => {
+                    const sData = INDIA_GEO.find(s => s.state === selState.value);
+                    const dData = sData?.districts.find(d => d.d === selDistrict.value);
+                    selCity.innerHTML = '<option value="">— Select City (optional) —</option>';
+                    selCity.disabled = !dData;
+                    if (!dData) { if (sData) setSelected(sData.state, sData.lat, sData.lon); return; }
+                    (dData.cities || []).forEach(c => {
+                        const o = document.createElement('option'); o.value = c; o.textContent = c;
+                        selCity.appendChild(o);
+                    });
+                    setSelected(dData.d + ', ' + sData.state, dData.lat, dData.lon);
+                };
+
+                selCity.onchange = () => {
+                    const sData = INDIA_GEO.find(s => s.state === selState.value);
+                    const dData = sData?.districts.find(d => d.d === selDistrict.value);
+                    if (!selCity.value || !dData) return;
+                    setSelected(selCity.value + ', ' + dData.d + ', ' + sData.state, dData.lat, dData.lon);
+                };
+
+                /* Typeahead search */
+                const locSearch = document.getElementById('loc-search');
+                const locDropdown = document.getElementById('loc-dropdown');
+                const TYPE_ICON = { state: '🗺️', district: '📍', city: '🏙️' };
+                let _srActive = -1, _srRes = [];
+
+                function _renderSr(list) {
+                    _srRes = list; _srActive = -1;
+                    if (!list.length) { locDropdown.style.display = 'none'; return; }
+                    locDropdown.innerHTML = list.map((e, i) => `
+                        <div class="_sri" data-i="${i}" style="
+                            display:flex;align-items:center;gap:8px;padding:8px 11px;
+                            cursor:pointer;border-bottom:1px solid rgba(0,212,255,.06);font-size:.8rem
+                        ">
+                          <span>${TYPE_ICON[e.type] || '📍'}</span>
+                          <div style="flex:1">
+                            <div style="font-weight:600;color:${e.type === 'state' ? '#00d4ff' : e.type === 'district' ? '#00e5a0' : '#e0eeff'}">${e.name}</div>
+                            ${e.type !== 'state' ? `<div style="font-size:.65rem;color:rgba(180,210,255,.4)">${e.display.split('—').pop() || ''}</div>` : ''}
+                          </div>
+                          <span style="font-size:.6rem;color:rgba(0,212,255,.5);font-family:monospace">${e.type}</span>
+                        </div>`).join('');
+                    locDropdown.style.display = 'block';
+                    locDropdown.querySelectorAll('._sri').forEach(el => {
+                        el.addEventListener('mouseenter', () => el.style.background = 'rgba(0,212,255,.08)');
+                        el.addEventListener('mouseleave', () => el.style.background = 'transparent');
+                        el.addEventListener('mousedown', () => {
+                            const e = _srRes[+el.dataset.i];
+                            setSelected(e.display, e.lat, e.lon);
+                            locSearch.value = e.display;
+                            locDropdown.style.display = 'none';
+                        });
+                    });
+                }
+
+                locSearch.addEventListener('input', () => _renderSr(searchIndia(locSearch.value, 7)));
+                locSearch.addEventListener('keydown', ev => {
+                    if (ev.key === 'ArrowDown') { _srActive = Math.min(_srActive + 1, _srRes.length - 1); _highlightSr(); ev.preventDefault(); }
+                    if (ev.key === 'ArrowUp') { _srActive = Math.max(_srActive - 1, 0); _highlightSr(); ev.preventDefault(); }
+                    if (ev.key === 'Enter' && _srRes.length) {
+                        const e = _srRes[_srActive >= 0 ? _srActive : 0];
+                        setSelected(e.display, e.lat, e.lon); locSearch.value = e.display; locDropdown.style.display = 'none';
+                    }
+                    if (ev.key === 'Escape') locDropdown.style.display = 'none';
+                });
+                locSearch.addEventListener('blur', () => setTimeout(() => { locDropdown.style.display = 'none'; }, 200));
+
+                function _highlightSr() {
+                    locDropdown.querySelectorAll('._sri').forEach((el, i) => {
+                        el.style.background = i === _srActive ? 'rgba(0,212,255,.12)' : 'transparent';
+                    });
+                }
+            }
+
+            document.getElementById('detect-btn').addEventListener('click', () => {
+                const btn = document.getElementById('detect-btn');
+                if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+                btn.textContent = '⏳ Detecting...'; btn.disabled = true;
+                navigator.geolocation.getCurrentPosition(async pos => {
+                    userLat = pos.coords.latitude; userLon = pos.coords.longitude;
+                    const city = await _revGeocode(userLat, userLon);
+                    await _saveLocation(userLat, userLon, city);
+                    _placeUserMarker(userLat, userLon);
+                    map.setView([userLat, userLon], 12);
+                    _hideLocationModal();
+                    loadAll();
+                    btn.textContent = '📡 Auto-detect my location'; btn.disabled = false;
+                }, () => { btn.textContent = '📡 Auto-detect my location'; btn.disabled = false; });
+            });
+
+            document.getElementById('loc-save-btn').addEventListener('click', async () => {
+                if (!_locPicked) return;
+                userLat = _locPicked.lat; userLon = _locPicked.lon;
+                await _saveLocation(userLat, userLon, _locPicked.name);
+                _placeUserMarker(userLat, userLon);
+                map.setView([userLat, userLon], _locPicked.name.includes(',') ? 11 : 7);
+                _hideLocationModal();
+                loadAll();
+            });
+
+            document.getElementById('loc-skip-btn').addEventListener('click', _hideLocationModal);
+
+            async function _revGeocode(lat, lon) {
+                try {
+                    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+                    const d = await r.json();
+                    return d.address?.city || d.address?.town || d.address?.state || 'Your Location';
+                } catch (_) { return 'Your Location'; }
+            }
+
+            async function _saveLocation(lat, lon, city) {
+                user.city = city; user.latitude = lat; user.longitude = lon;
+                document.getElementById('tb-city-name').textContent = city;
+                await fetch('api/update_location.php', {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lat, lon, city }),
+                });
+            }
+
+            /* ── Data loading ───────────────────────────────────────── */
+            async function loadAll() {
+                await Promise.allSettled([loadDisasters(), loadAlerts(), loadWeather()]);
+            }
+
+            /* Disasters — filtered to user's area */
+            async function loadDisasters() {
+                if (!userLat) return;
+                try {
+                    const r = await fetch(`api/disasters.php?view=india&range=24h&_t=${Date.now()}`);
+                    const d = await r.json();
+                    const all = d.disasters || [];
+                    const near = all.filter(ev => ev.lat && ev.lon && _km(userLat, userLon, +ev.lat, +ev.lon) <= RADIUS)
+                        .map(ev => ({ ...ev, _km: _km(userLat, userLon, +ev.lat, +ev.lon) }))
+                        .sort((a, b) => a._km - b._km);
+                    _renderEvents(near);
+                    _renderEventMarkers(near);
+                    _updateRiskMeter(near);
+                } catch (_) { }
+            }
+
+            /* Weather for user's selected city — real OWM data, 5-min refresh */
+            async function loadWeather() {
+                if (!user.city && !userLat) return;
+                try {
+                    let url;
+                    /* ALWAYS prefer city name — lat/lon can mismatch if user changed city
+                       without updating coordinates. Only use lat/lon if city name is absent. */
+                    if (user.city) {
+                        url = `api/city_weather.php?city=${encodeURIComponent(user.city)}&_t=${Date.now()}`;
+                    } else {
+                        url = `api/city_weather.php?lat=${userLat}&lon=${userLon}&_t=${Date.now()}`;
+                    }
+                    const r = await fetch(url);
+                    const d = await r.json();
+                    if (d.weather) {
+                        /* Force-override OWM's city name with the user's chosen city */
+                        d.weather._displayCity = user.city || d.weather.city;
+                        _renderWeather(d.weather);
+                    } else {
+                        const el = document.getElementById('wx-content');
+                        if (el) el.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span>${d.error || 'Weather unavailable'}<br/><button onclick="loadWeather()" style="margin-top:8px;padding:4px 12px;border:1px solid rgba(0,212,255,.2);border-radius:5px;background:transparent;color:#00d4ff;cursor:pointer;font-size:.72rem">Retry</button></div>`;
+                    }
+                } catch (_) { }
+            }
+
+
+
+            /* Personal alerts */
+            async function loadAlerts() {
+                try {
+                    const r = await fetch('api/alerts.php', { credentials: 'include' });
+                    const d = await r.json();
+                    if (!d.auth) return;
+                    _renderAlerts(d.alerts || []);
+                    _notifyNew(d.alerts || []);
+                    const unread = (d.alerts || []).filter(a => !a.read_at).length;
+                    _setAlertBadge(unread);
+                } catch (_) { }
+            }
+
+            /* ── Render helpers ─────────────────────────────────────── */
+            const TYPE_META = {
+                earthquake: { icon: '🌍', color: '#ff6600', label: 'Earthquake' },
+                flood: { icon: '🌊', color: '#0088ff', label: 'Flood' },
+                heatwave: { icon: '🌡️', color: '#ff6600', label: 'Heatwave' },
+                cyclone: { icon: '🌀', color: '#cc44ff', label: 'Cyclone' },
+                weather: { icon: '⛈️', color: '#00aaff', label: 'Weather' },
+            };
+
+            function _renderEvents(events) {
+                const list = document.getElementById('events-list');
+                const cntEl = document.getElementById('event-count');
+                if (!events.length) {
+                    list.innerHTML = '<div class="empty-state"><span class="empty-icon">✅</span>No threats detected within ' + RADIUS + ' km</div>';
+                    cntEl.style.display = 'none'; return;
+                }
+                cntEl.textContent = events.length; cntEl.style.display = '';
+                list.innerHTML = events.slice(0, 12).map(ev => {
+                    const m = TYPE_META[ev.type] || TYPE_META.weather;
+                    const km = ev._km.toFixed(0);
+                    const sev = km <= 5 ? 'HIGH' : km <= 10 ? 'MEDIUM' : 'LOW';
+                    const sevCls = { HIGH: 'sev-HIGH', MEDIUM: 'sev-MEDIUM', LOW: 'sev-LOW' }[sev];
+                    return `<div class="event-item" onclick="_flyTo(${ev.lat},${ev.lon})">
+        <div class="ev-dot" style="background:${m.color}"></div>
+        <div class="ev-info">
+          <div class="ev-title">${ev.label || m.label}</div>
+          <div class="ev-sub">${m.icon} ${m.label} · ${ev.source || 'DICC'}</div>
+          <div class="ev-dist">📍 ${km} km away</div>
+        </div>
+        <span class="ev-sev ${sevCls}">${sev}</span>
+      </div>`;
+                }).join('');
+            }
+
+            window._flyTo = (lat, lon) => { map.flyTo([+lat, +lon], 13, { duration: 1 }); };
+
+            function _renderEventMarkers(events) {
+                /* Remove old */
+                Object.values(eventMarkers).forEach(m => m.remove());
+                Object.keys(eventMarkers).forEach(k => delete eventMarkers[k]);
+
+                events.forEach(ev => {
+                    const m = TYPE_META[ev.type] || TYPE_META.weather;
+                    const size = ev._km <= 5 ? 18 : 14;
+                    const icon = L.divIcon({
+                        className: '',
+                        html: `<div style="width:${size}px;height:${size}px;background:${m.color};border-radius:50%;
+                    border:2px solid rgba(255,255,255,.3);
+                    box-shadow:0 0 12px ${m.color}66;cursor:pointer"></div>`,
+                        iconSize: [size, size], iconAnchor: [size / 2, size / 2],
+                    });
+                    const marker = L.marker([+ev.lat, +ev.lon], { icon })
+                        .bindPopup(`
+          <div class="popup-title">${m.icon} ${ev.label || m.label}</div>
+          <div class="popup-row"><span>Type</span><span>${m.label}</span></div>
+          <div class="popup-row"><span>Source</span><span>${ev.source || 'DICC'}</span></div>
+          <div class="popup-row"><span>Distance</span><span>${ev._km.toFixed(1)} km</span></div>
+          <div class="popup-row"><span>Risk</span><span style="color:${ev._km <= 5 ? '#ff1144' : ev._km <= 10 ? '#ff6600' : '#ffd700'}">${ev._km <= 5 ? 'HIGH' : ev._km <= 10 ? 'MEDIUM' : 'LOW'}</span></div>
+        `).addTo(map);
+                    eventMarkers[ev.id || Math.random()] = marker;
+                });
+            }
+
+            function _renderWeather(wx) {
+                const el = document.getElementById('wx-content');
+                if (!wx) { el.innerHTML = '<div class="empty-state"><span class="empty-icon">⚠️</span>No weather data<br/><button onclick="loadWeather()" style="margin-top:8px;padding:4px 12px;border:1px solid rgba(0,212,255,.2);border-radius:5px;background:transparent;color:#00d4ff;cursor:pointer;font-size:.72rem">Retry</button></div>'; return; }
+
+                const temp = wx.temperature != null ? Math.round(wx.temperature) : '—';
+                const feels = wx.feels_like != null ? Math.round(wx.feels_like) : '—';
+                const tmin = wx.temp_min != null ? Math.round(wx.temp_min) : '—';
+                const tmax = wx.temp_max != null ? Math.round(wx.temp_max) : '—';
+                const hum = wx.humidity != null ? wx.humidity : '—';
+                const pres = wx.pressure != null ? wx.pressure : '—';
+                const vis = wx.visibility_km != null ? wx.visibility_km + ' km' : '—';
+                const wind = wx.wind_speed_kmh != null ? wx.wind_speed_kmh.toFixed(1) + ' km/h' : (wx.wind_speed != null ? wx.wind_speed.toFixed(1) + ' m/s' : '—');
+                const wDir = wx.wind_dir || '';
+                const clouds = wx.clouds_pct != null ? wx.clouds_pct + '%' : '—';
+                const rain = wx.rain_1h_mm != null ? wx.rain_1h_mm + ' mm' : '0 mm';
+                const cond = wx.condition_text || wx.condition || '—';
+                const iconUrl = wx.icon_url || '';
+                const flags = wx.flags || {};
+
+                const tempColor = temp >= 45 ? '#ff1144' : temp >= 40 ? '#ff6600' : temp >= 35 ? '#ffaa00' : temp <= 10 ? '#00aaff' : '#00e5a0';
+                const humColor = hum >= 80 ? '#0088ff' : hum >= 60 ? '#00aaff' : '#e0eeff';
+
+                const fmtTime = unix => {
+                    if (!unix) return '—';
+                    return new Date(unix * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                };
+
+                const META_FLAG = { heatwave: { lbl: '🌡️ Heatwave', col: '#ff6600' }, cyclone: { lbl: '🌀 Cyclone Risk', col: '#cc44ff' }, flood: { lbl: '🌊 Flood Risk', col: '#0088ff' } };
+                const flagHtml = Object.entries(flags).filter(([, v]) => v).map(([k]) => {
+                    const m = META_FLAG[k];
+                    return m ? `<span style="border:1px solid ${m.col}55;border-radius:4px;font-size:.62rem;font-weight:700;padding:2px 7px;background:rgba(0,0,0,.15);color:${m.col}">${m.lbl}</span>` : '';
+                }).join(' ');
+
+                el.innerHTML = `
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                    ${iconUrl ? `<img src="${iconUrl}" width="50" height="50" style="filter:drop-shadow(0 0 6px rgba(0,212,255,.3))" onerror="this.style.display='none'"/>` : '<span style="font-size:32px">⛅</span>'}
+                    <div style="flex:1">
+                      <div style="font-size:.9rem;font-weight:700;color:#e0eeff">${wx._displayCity || user.city || wx.city}</div>
+                      <div style="font-size:.7rem;color:rgba(180,210,255,.55);text-transform:capitalize;margin-top:2px">${cond}</div>
+                      <div style="font-size:.6rem;color:rgba(180,210,255,.3);margin-top:2px;font-family:monospace">📡 OpenWeatherMap · Live</div>
+                    </div>
+                    <div style="text-align:right">
+                      <div style="font-size:2rem;font-weight:800;color:${tempColor};line-height:1">${temp}°</div>
+                      <div style="font-size:.65rem;color:rgba(180,210,255,.4);margin-top:2px">${tmin}° / ${tmax}°</div>
+                    </div>
+                  </div>
+                  ${flagHtml ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">${flagHtml}</div>` : ''}
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
+                    <div class="wx-chip"><span class="wx-chip-icon">🤔</span><div class="wx-chip-val">${feels}°C</div><div class="wx-chip-lbl">Feels Like</div></div>
+                    <div class="wx-chip"><span class="wx-chip-icon">💧</span><div class="wx-chip-val" style="color:${humColor}">${hum}%</div><div class="wx-chip-lbl">Humidity</div></div>
+                    <div class="wx-chip"><span class="wx-chip-icon">💨</span><div class="wx-chip-val" style="font-size:.7rem">${wind}</div><div class="wx-chip-lbl">Wind ${wDir}</div></div>
+                    <div class="wx-chip"><span class="wx-chip-icon">🌡</span><div class="wx-chip-val">${pres} hPa</div><div class="wx-chip-lbl">Pressure</div></div>
+                    <div class="wx-chip"><span class="wx-chip-icon">�️</span><div class="wx-chip-val">${vis}</div><div class="wx-chip-lbl">Visibility</div></div>
+                    <div class="wx-chip"><span class="wx-chip-icon">🌧️</span><div class="wx-chip-val">${rain}</div><div class="wx-chip-lbl">Rain/hr</div></div>
+                    <div class="wx-chip"><span class="wx-chip-icon">☁️</span><div class="wx-chip-val">${clouds}</div><div class="wx-chip-lbl">Cloud Cover</div></div>
+                    <div class="wx-chip"><span class="wx-chip-icon">🌅</span><div class="wx-chip-val" style="font-size:.65rem">${fmtTime(wx.sunrise_unix)}</div><div class="wx-chip-lbl">Sunrise</div></div>
+                  </div>
+                  <div style="margin-bottom:6px">
+                    <div style="display:flex;justify-content:space-between;font-size:.6rem;color:rgba(180,210,255,.35);margin-bottom:3px"><span>Humidity</span><span>${hum}%</span></div>
+                    <div style="height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden">
+                      <div style="height:100%;width:${hum}%;background:${humColor};transition:width .6s ease;border-radius:2px"></div>
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+                    <span style="font-size:.6rem;color:rgba(180,210,255,.3);font-family:monospace">🔄 Next: <span id="wx-countdown">5:00</span></span>
+                    <button onclick="loadWeather()" style="background:transparent;border:1px solid rgba(0,212,255,.2);border-radius:4px;color:#00d4ff;font-size:.6rem;cursor:pointer;padding:2px 7px;font-family:monospace">↺ Now</button>
+                  </div>`;
+            }
+
+            function _renderAlerts(alerts) {
+                const list = document.getElementById('alerts-list');
+                if (!alerts.length) {
+                    list.innerHTML = '<div class="empty-state"><span class="empty-icon">🔕</span>No proximity alerts yet</div>';
+                    return;
+                }
+                const ICON = { flood: '🌊', heatwave: '🌡️', cyclone: '🌀', earthquake: '🌍' };
+                list.innerHTML = alerts.slice(0, 8).map(a => `
+      <div class="alert-item ${a.read_at ? '' : 'unread'}">
+        <span class="al-icon">${ICON[a.disaster_type] || '⚡'}</span>
+        <div class="al-body">
+          <div class="al-msg">${a.message}</div>
+          <div class="al-meta">📍 ${parseFloat(a.distance_km).toFixed(1)} km · ${_ago(a.sent_at)}</div>
+        </div>
+        <span class="al-sev sev-${a.severity}">${a.severity}</span>
+      </div>`).join('');
+            }
+
+            function _updateRiskMeter(events) {
+                const riskIcon = document.getElementById('risk-icon');
+                const riskValue = document.getElementById('risk-value');
+                const riskDist = document.getElementById('risk-dist');
+                const banner = document.getElementById('alert-banner');
+                const bannerTxt = document.getElementById('alert-banner-text');
+
+                if (!events.length) {
+                    riskIcon.textContent = '🟢'; riskValue.textContent = 'SAFE';
+                    riskValue.className = 'risk-value safe';
+                    riskDist.textContent = 'No threats within ' + RADIUS + ' km'; return;
+                }
+                const nearest = events[0];
+                const km = nearest._km;
+                if (km <= 5) {
+                    riskIcon.textContent = '🔴'; riskValue.textContent = 'HIGH RISK';
+                    riskValue.className = 'risk-value high';
+                } else if (km <= 10) {
+                    riskIcon.textContent = '🟠'; riskValue.textContent = 'MEDIUM RISK';
+                    riskValue.className = 'risk-value medium';
+                } else {
+                    riskIcon.textContent = '🟡'; riskValue.textContent = 'LOW RISK';
+                    riskValue.className = 'risk-value low';
+                }
+                riskDist.textContent = `${nearest.label || ''} — ${km.toFixed(1)} km`;
+
+                /* Alert banner for < 20km */
+                if (km <= 20) {
+                    const TYPE_ICON = { flood: '🌊', heatwave: '🌡️', cyclone: '🌀', earthquake: '🌍' };
+                    bannerTxt.textContent = `${TYPE_ICON[nearest.type] || '⚡'} ${(nearest.type || '').toUpperCase()}: ${nearest.label} — ${km.toFixed(1)} km from you`;
+                    banner.classList.add('show');
+                }
+            }
+
+            /* ── Siren & IoT Alert System ────────────────────────── */
+            const _sirenIds = new Set();
+            let _sirenPlaying = false;
+
+            /* Web Audio siren — heatwave: rising wail */
+            function _sirenHeatwave() {
+                if (_sirenPlaying) return;
+                _sirenPlaying = true;
+                try {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctx) return;
+                    const ctx = new Ctx();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.type = 'sawtooth';
+                    /* Rising wail: 400Hz → 1200Hz over 0.8s, repeat 3x */
+                    const now = ctx.currentTime;
+                    for (let i = 0; i < 3; i++) {
+                        const t = now + i * 1.0;
+                        osc.frequency.setValueAtTime(400, t);
+                        osc.frequency.linearRampToValueAtTime(1200, t + 0.7);
+                        osc.frequency.setValueAtTime(400, t + 0.8);
+                        gain.gain.setValueAtTime(0.0001, t);
+                        gain.gain.linearRampToValueAtTime(0.15, t + 0.05);
+                        gain.gain.setValueAtTime(0.15, t + 0.65);
+                        gain.gain.linearRampToValueAtTime(0.0001, t + 0.8);
+                    }
+                    osc.start(now);
+                    osc.stop(now + 3.1);
+                    osc.onended = () => { ctx.close(); _sirenPlaying = false; };
+                } catch (_) { _sirenPlaying = false; }
+            }
+
+            /* Web Audio siren — flood: rapid water-drop pulses */
+            function _sirenFlood() {
+                if (_sirenPlaying) return;
+                _sirenPlaying = true;
+                try {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctx) return;
+                    const ctx = new Ctx();
+                    const now = ctx.currentTime;
+                    [[220, 0], [440, .3], [220, .6], [440, .9], [220, 1.2], [440, 1.5]].forEach(([freq, t]) => {
+                        const o = ctx.createOscillator(), g = ctx.createGain();
+                        o.connect(g); g.connect(ctx.destination);
+                        o.type = 'sine';
+                        o.frequency.value = freq;
+                        g.gain.setValueAtTime(0.0001, now + t);
+                        g.gain.linearRampToValueAtTime(0.18, now + t + 0.04);
+                        g.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.22);
+                        o.start(now + t); o.stop(now + t + 0.25);
+                    });
+                    setTimeout(() => { _sirenPlaying = false; }, 2000);
+                } catch (_) { _sirenPlaying = false; }
+            }
+
+            /* Full-page alert banner for IoT sensor alerts */
+            function _showIotBanner(type, message) {
+                let banner = document.getElementById('iot-alert-fullbanner');
+                if (!banner) {
+                    banner = document.createElement('div');
+                    banner.id = 'iot-alert-fullbanner';
+                    banner.style.cssText = [
+                        'position:fixed;top:0;left:0;right:0;z-index:99999;',
+                        'padding:14px 20px;display:flex;align-items:center;gap:12px;',
+                        'animation:iotBannerSlide .3s ease;box-shadow:0 4px 30px rgba(0,0,0,.5);',
+                        'font-size:.88rem;font-weight:700;'
+                    ].join('');
+                    document.body.appendChild(banner);
+                }
+                const isHeat = type === 'heatwave';
+                const isFlood = type === 'flood';
+                const col = isHeat ? '#ff3300' : isFlood ? '#0088ff' : '#ff6600';
+                const icon = { heatwave: '🌡️', flood: '🌊', cyclone: '🌀' }[type] || '⚡';
+                banner.style.background = isHeat
+                    ? 'linear-gradient(135deg,#3a0000,#1a0a00)'
+                    : isFlood
+                        ? 'linear-gradient(135deg,#001a3a,#000a1a)'
+                        : 'linear-gradient(135deg,#2a0045,#1a0045)';
+                banner.style.borderBottom = `2px solid ${col}`;
+                banner.innerHTML = `
+                    <span style="font-size:1.6rem;animation:iotBannerPulse 0.5s ease infinite alternate">${icon}</span>
+                    <div style="flex:1">
+                        <div style="color:${col};letter-spacing:.06em">${type.toUpperCase()} ALERT — IoT Sensor</div>
+                        <div style="font-size:.75rem;font-weight:400;color:rgba(255,255,255,.75);margin-top:2px">${message}</div>
+                    </div>
+                    <button onclick="document.getElementById('iot-alert-fullbanner').style.display='none'"
+                        style="background:none;border:1px solid ${col}55;border-radius:6px;color:${col};
+                               cursor:pointer;padding:5px 12px;font-size:.72rem;font-weight:700">
+                        DISMISS
+                    </button>`;
+                banner.style.display = 'flex';
+                /* Auto-dismiss after 12s */
+                clearTimeout(banner._t);
+                banner._t = setTimeout(() => { if (banner) banner.style.display = 'none'; }, 12000);
+            }
+
+            function _notifyNew(alerts) {
+                const newAlerts = alerts.filter(a => !a.read_at && !notifiedIds.has(a.id));
+                newAlerts.forEach(a => {
+                    notifiedIds.add(a.id);
+
+                    /* Browser push notification */
+                    if (Notification.permission === 'granted') {
+                        const icon = { flood: '🌊', heatwave: '🌡️', cyclone: '🌀', earthquake: '🌍' }[a.disaster_type] || '⚡';
+                        new Notification(`${icon} DICC Alert — ${a.severity}`, { body: a.message });
+                    }
+
+                    /* Siren + banner for IoT-triggered alerts (severity HIGH or from esp32 node) */
+                    const isHot = a.disaster_type === 'heatwave' && (a.severity === 'HIGH' || a.severity === 'MEDIUM');
+                    const isWet = a.disaster_type === 'flood' && (a.severity === 'HIGH' || a.severity === 'MEDIUM');
+                    if (isHot) { _sirenHeatwave(); _showIotBanner('heatwave', a.message); }
+                    if (isWet) { _sirenFlood(); _showIotBanner('flood', a.message); }
+                });
+                if (Notification.permission === 'default') Notification.requestPermission();
+            }
+
+            function _setAlertBadge(count) {
+                const el1 = document.getElementById('tb-alert-count');
+                const el2 = document.getElementById('alert-count');
+                [el1, el2].forEach(el => { if (el) { el.textContent = count; el.style.display = count > 0 ? '' : 'none'; } });
+            }
+
+            /* Read all alerts */
+            document.getElementById('read-all-btn').addEventListener('click', async () => {
+                await fetch('api/alerts.php?action=read', { method: 'POST', credentials: 'include' });
+                _setAlertBadge(0);
+                document.querySelectorAll('.alert-item.unread').forEach(el => el.classList.remove('unread'));
+            });
+
+            document.getElementById('bell-btn').addEventListener('click', () => {
+                document.getElementById('sidebar').scrollTop = 9999;
+            });
+
+            /* ── Haversine ──────────────────────────────────────────── */
+            function _km(lat1, lon1, lat2, lon2) {
+                const R = 6371, r = Math.PI / 180;
+                const dL = (lat2 - lat1) * r, dG = (lon2 - lon1) * r;
+                const a = Math.sin(dL / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dG / 2) ** 2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+
+            function _ago(unix) {
+                const m = Math.floor((Date.now() / 1000 - unix) / 60);
+                if (m < 1) return 'just now';
+                if (m < 60) return `${m}m ago`;
+                if (m < 1440) return `${Math.floor(m / 60)}h ago`;
+                return `${Math.floor(m / 1440)}d ago`;
+            }
+
+            /* ── IoT Node polling — real-time sensor triggers siren ── */
+            async function pollIotNode() {
+                try {
+                    const r = await fetch('api/iot_dashboard.php?action=status&_t=' + Date.now());
+                    const d = await r.json();
+                    const city = (user.city || '').toLowerCase().split(',')[0].trim();
+                    const nodes = (d.nodes || []).filter(n => {
+                        const nc = (n.city || '').toLowerCase();
+                        return nc && city && nc.includes(city);
+                    });
+                    if (!nodes.length) return;
+                    const node = nodes[0];
+                    const agoSec = node.last_seen ? Math.floor(Date.now() / 1000 - node.last_seen) : 9999;
+                    if (agoSec > 30) return; /* stale reading — ignore */
+
+                    const hr = parseFloat(node.heatwave_risk || 0);
+                    const fr = parseFloat(node.flood_risk || 0);
+                    const temp = parseFloat(node.temperature || 0);
+
+                    /* 🌡️ HEATWAVE: temp > 40°C */
+                    if (hr >= 0.35 && !_sirenIds.has('hw_' + node.id)) {
+                        _sirenIds.add('hw_' + node.id);
+                        _sirenHeatwave();
+                        _showIotBanner('heatwave',
+                            `📡 ESP32 in ${node.city} reads ${temp.toFixed(1)}°C — heatwave! ${temp >= 40 ? 'Temperature above 40°C.' : ''} Stay indoors.`);
+                        setTimeout(() => _sirenIds.delete('hw_' + node.id), 1800000);
+                    } else if (hr < 0.1) {
+                        _sirenIds.delete('hw_' + node.id);
+                    }
+
+                    /* 🌊 FLOOD: rain HEAVY + soil saturated + humidity HIGH */
+                    if (fr >= 0.45 && !_sirenIds.has('fl_' + node.id)) {
+                        _sirenIds.add('fl_' + node.id);
+                        _sirenFlood();
+                        _showIotBanner('flood',
+                            `📡 ESP32 in ${node.city}: Rain ${node.rain_status}, Soil ${node.soil_moisture_pct ? parseFloat(node.soil_moisture_pct).toFixed(0) + '%' : 'saturated'} — Flood risk HIGH.`);
+                        setTimeout(() => _sirenIds.delete('fl_' + node.id), 1800000);
+                    } else if (fr < 0.2) {
+                        _sirenIds.delete('fl_' + node.id);
+                    }
+                } catch (_) { }
+            }
+
+            /* ── Start ─────────────────────────────────────────────── */
+            await loadAll();
+            setInterval(() => { loadDisasters(); loadAlerts(); }, 15000);
+            setInterval(pollIotNode, 10000);
+            pollIotNode(); /* immediate first check */
+
+
+            /* Weather: separate 5-min refresh + countdown */
+            let wxNextAt = Date.now() + 300000;
+            let wxCountdownTimer = setInterval(() => {
+                const el = document.getElementById('wx-countdown');
+                if (!el) return;
+                const s = Math.max(0, Math.round((wxNextAt - Date.now()) / 1000));
+                el.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+            }, 1000);
+            setInterval(async () => {
+                await loadWeather();
+                wxNextAt = Date.now() + 300000;
+            }, 300000);
+
+            /* Expose loadWeather globally for the ↺ Now button */
+            window.loadWeather = loadWeather;
+
+        })();
+    </script>
+</body>
+
+</html>

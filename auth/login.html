@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — DICC India</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            min-height: 100vh;
+            background: #030912;
+            color: #e0eeff;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: radial-gradient(ellipse at 20% 50%, rgba(0, 212, 255, .06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(0, 255, 136, .04) 0%, transparent 50%)
+        }
+
+        /* Stars */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(1px 1px at 10% 15%, rgba(255, 255, 255, .4) 0%, transparent 100%),
+                radial-gradient(1px 1px at 85% 30%, rgba(255, 255, 255, .3) 0%, transparent 100%),
+                radial-gradient(1px 1px at 50% 70%, rgba(255, 255, 255, .35) 0%, transparent 100%),
+                radial-gradient(1px 1px at 70% 80%, rgba(255, 255, 255, .25) 0%, transparent 100%);
+            pointer-events: none;
+            z-index: 0
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px
+        }
+
+        /* Brand */
+        .brand {
+            text-align: center;
+            margin-bottom: 28px
+        }
+
+        .brand-icon {
+            font-size: 2.2rem;
+            display: block;
+            margin-bottom: 8px
+        }
+
+        .brand-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            color: #00d4ff;
+            letter-spacing: 3px
+        }
+
+        .brand-sub {
+            font-size: .72rem;
+            color: rgba(180, 210, 255, .5);
+            letter-spacing: 1px;
+            margin-top: 4px
+        }
+
+        /* Card */
+        .card {
+            background: rgba(6, 18, 40, .85);
+            border: 1px solid rgba(0, 212, 255, .15);
+            border-radius: 14px;
+            padding: 32px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 60px rgba(0, 212, 255, .06), 0 24px 60px rgba(0, 0, 0, .5)
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 22px;
+            color: #e0eeff
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 16px
+        }
+
+        .form-label {
+            display: block;
+            font-size: .72rem;
+            color: rgba(180, 210, 255, .6);
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            margin-bottom: 6px
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(0, 212, 255, .15);
+            border-radius: 8px;
+            padding: 10px 13px;
+            color: #e0eeff;
+            font-size: .87rem;
+            outline: none;
+            transition: border-color .2s;
+            font-family: 'Inter', sans-serif
+        }
+
+        .form-input:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, .08)
+        }
+
+        .form-input::placeholder {
+            color: rgba(180, 210, 255, .3)
+        }
+
+        /* Button */
+        .btn {
+            width: 100%;
+            padding: 11px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: .9rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: all .2s
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #0055ff);
+            color: #000;
+            box-shadow: 0 0 24px rgba(0, 212, 255, .25)
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 32px rgba(0, 212, 255, .4);
+            transform: translateY(-1px)
+        }
+
+        .btn-primary:active {
+            transform: translateY(0)
+        }
+
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none
+        }
+
+        /* Messages */
+        .msg {
+            padding: 10px 14px;
+            border-radius: 7px;
+            font-size: .8rem;
+            margin-bottom: 14px;
+            display: none
+        }
+
+        .msg.error {
+            background: rgba(255, 17, 68, .1);
+            border: 1px solid rgba(255, 17, 68, .3);
+            color: #ff4466;
+        }
+
+        .msg.success {
+            background: rgba(0, 229, 160, .1);
+            border: 1px solid rgba(0, 229, 160, .3);
+            color: #00e5a0;
+        }
+
+        /* Links */
+        .form-link {
+            text-align: center;
+            margin-top: 18px;
+            font-size: .78rem;
+            color: rgba(180, 210, 255, .5)
+        }
+
+        .form-link a {
+            color: #00d4ff;
+            text-decoration: none;
+            font-weight: 500
+        }
+
+        .form-link a:hover {
+            text-decoration: underline
+        }
+
+        /* Spinner */
+        .spin {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(0, 0, 0, .3);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="brand">
+            <span class="brand-icon">🌐</span>
+            <div class="brand-name">DICC INDIA</div>
+            <div class="brand-sub">Disaster Intelligence Command Center</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">🔐 Sign In to Your Account</div>
+            <div class="msg" id="msg"></div>
+
+            <form id="login-form" autocomplete="on">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <input type="email" id="email" class="form-input" placeholder="you@example.com" required
+                        autocomplete="email" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••" required
+                        autocomplete="current-password" />
+                </div>
+                <button type="submit" class="btn btn-primary" id="login-btn">Sign In</button>
+            </form>
+
+            <div class="form-link">Don't have an account? <a href="register.html">Register here</a></div>
+            <div class="form-link" style="margin-top:8px"><a href="../index.html">← Back to Dashboard</a></div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const msg = document.getElementById('msg');
+        const btn = document.getElementById('login-btn');
+
+        function showMsg(text, type) {
+            msg.textContent = text;
+            msg.className = 'msg ' + type;
+            msg.style.display = 'block';
+        }
+
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spin"></span>Signing in...';
+
+            try {
+                const res = await fetch('../api/login.php', {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value.trim(),
+                        password: document.getElementById('password').value,
+                    }),
+                });
+                const data = await res.json();
+
+                if (data.ok) {
+                    showMsg('✅ Login successful! Redirecting...', 'success');
+                    const dest = data.role === 'admin' ? '../index.html' : '../client.html';
+                    setTimeout(() => { window.location.href = dest; }, 700);
+
+                } else if (data.needs_verify) {
+                    showMsg('📧 ' + data.error, 'error');
+                    setTimeout(() => { window.location.href = 'verify.html?email=' + encodeURIComponent(document.getElementById('email').value); }, 1500);
+                } else {
+                    showMsg('❌ ' + (data.error || 'Login failed'), 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Sign In';
+                }
+            } catch (err) {
+                showMsg('❌ Network error. Check that XAMPP is running.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        });
+    </script>
+</body>
+
+</html>

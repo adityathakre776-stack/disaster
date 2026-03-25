@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DICC India — Real-Time Disaster Intelligence | India Disaster Command Center</title>
+  <meta name="description"
+    content="India-focused real-time disaster intelligence platform monitoring earthquakes, cyclones, floods and extreme weather across all Indian states with live 3D terrain visualization." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@600;700;800&display=swap"
+    rel="stylesheet" />
+
+  <!-- MapLibre GL JS — Free 3D Map Engine -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+  <!-- GSAP + Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+
+<body>
+
+  <!-- ============ LOADING SCREEN ============ -->
+  <div id="loading-screen">
+    <div class="loading-content">
+      <div class="loading-logo">
+        <div class="logo-ring ring-1"></div>
+        <div class="logo-ring ring-2"></div>
+        <div class="logo-ring ring-3"></div>
+        <svg class="logo-core" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+          <path d="M2 17l10 5 10-5" />
+          <path d="M2 12l10 5 10-5" />
+        </svg>
+      </div>
+      <div class="loading-title">DICC INDIA</div>
+      <div class="loading-subtitle">Disaster Intelligence Command Center</div>
+      <div class="loading-bar-wrap">
+        <div class="loading-bar" id="loading-bar"></div>
+      </div>
+      <div class="loading-status" id="loading-status">Initializing 3D India terrain map...</div>
+      <div class="loading-datasources">
+        <span class="ds-badge">🇮🇳 India Only</span>
+        <span class="ds-badge">USGS Seismic</span>
+        <span class="ds-badge">OWM Weather</span>
+        <span class="ds-badge">IMD Alerts</span>
+        <span class="ds-badge">3D Terrain</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TOP BAR ============ -->
+  <header id="top-bar">
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+        <path d="M2 17l10 5 10-5" />
+        <path d="M2 12l10 5 10-5" />
+      </svg>
+      <div class="brand-text">
+        <span class="brand-name">DICC INDIA</span>
+        <span class="brand-tagline">Disaster Intelligence Command Center</span>
+      </div>
+    </div>
+
+    <div class="top-bar-center">
+      <div class="filter-group">
+        <button class="filter-btn active" id="btn-earthquakes">
+          <span class="filter-dot earthquakes"></span>Earthquakes
+        </button>
+        <button class="filter-btn active" id="btn-weather">
+          <span class="filter-dot weather"></span>Weather
+        </button>
+        <button class="filter-btn" id="btn-heatmap">
+          <span class="filter-dot heatmap"></span>Heatmap
+        </button>
+        <button class="filter-btn" id="btn-flood">
+          <span class="filter-dot" style="background:#0088ff"></span>Flood
+        </button>
+        <button class="filter-btn" id="btn-heatwave">
+          <span class="filter-dot" style="background:#ff6600"></span>Heatwave
+        </button>
+        <button class="filter-btn" id="btn-cyclone">
+          <span class="filter-dot" style="background:#cc44ff"></span>Cyclone
+        </button>
+        <button class="filter-btn" id="btn-iot-nodes" title="Show ESP32 sensor nodes on map">
+          <span class="filter-dot" style="background:#00ff88"></span>IoT Nodes
+        </button>
+      </div>
+    </div>
+
+    <div class="top-bar-right">
+      <div class="search-wrap" style="position:relative">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+        <input type="text" id="search-input" class="search-input" placeholder="Search state / district / city..."
+          autocomplete="off" />
+        <div id="search-dropdown" style="
+          display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;
+          background:rgba(4,14,36,.98);border:1px solid rgba(0,212,255,.2);
+          border-radius:8px;z-index:9999;max-height:320px;overflow-y:auto;
+          box-shadow:0 8px 32px rgba(0,0,0,.5);backdrop-filter:blur(12px);
+        "></div>
+      </div>
+      <button class="iot-loc-btn" id="btn-location" title="Enable proximity disaster alerts">📍 Alerts</button>
+      <div class="india-badge">🇮🇳 INDIA</div>
+      <div class="live-indicator">
+        <div class="live-dot"></div>LIVE
+        <span class="clock" id="clock">--:--:-- IST</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ MAIN LAYOUT ============ -->
+  <main id="main-layout">
+
+    <!-- LEFT PANEL: Live Disaster Feed -->
+    <aside id="left-panel" class="panel glass-panel">
+      <div class="panel-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        </svg>
+        <span>Live Disaster Feed</span>
+        <span class="event-count" id="event-count">0</span>
+      </div>
+
+      <div class="panel-controls">
+        <select class="time-select" id="time-filter">
+          <option value="1h">Last 1 Hour</option>
+          <option value="24h">Last 24 Hours</option>
+        </select>
+        <select class="time-select" id="mag-filter">
+          <option value="all">All Magnitudes</option>
+          <option value="2">M2.0+</option>
+          <option value="3">M3.0+</option>
+          <option value="4">M4.0+</option>
+          <option value="5">M5.0+</option>
+        </select>
+      </div>
+
+      <div class="feed-list" id="feed-list">
+        <div class="skeleton-item"></div>
+        <div class="skeleton-item"></div>
+        <div class="skeleton-item"></div>
+      </div>
+    </aside>
+
+    <!-- CENTER: 3D India Terrain Map -->
+    <section id="globe-container">
+      <!-- 3D India Terrain Map (MapLibre GL) -->
+      <div id="map-canvas" style="width:100%;height:100%;"></div>
+
+      <!-- Heatwave Canvas overlay (z-index above map, pointer-events:none) -->
+      <canvas id="heatwave-canvas"
+        style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none;"></canvas>
+
+      <div id="globe-overlay">
+        <div class="globe-controls">
+          <button class="ctrl-btn" id="btn-reset-cam" title="Reset View">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+          </button>
+          <button class="ctrl-btn active" id="btn-3d-toggle" title="Toggle 3D Tilt">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </button>
+          <button class="ctrl-btn" id="btn-zoom-in" title="Zoom In">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35M11 8v6M8 11h6" />
+            </svg>
+          </button>
+          <button class="ctrl-btn" id="btn-zoom-out" title="Zoom Out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35M8 11h6" />
+            </svg>
+          </button>
+          <button class="ctrl-btn" id="btn-heatwave-toggle" title="Toggle Heatwave Overlay"
+            style="--item-color:#ff6600">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2c0 4-4 5-4 9a4 4 0 0 0 8 0c0-4-4-5-4-9z" />
+              <path d="M12 14v4" />
+              <path d="M9 20h6" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="globe-status">
+          <span id="marker-count-label">Markers: 0</span>
+          <span id="fps-label">3D Terrain</span>
+        </div>
+      </div>
+
+      <!-- Event Popup (globe overlay) -->
+      <div id="event-popup" class="event-popup hidden">
+        <div class="popup-header">
+          <span class="popup-type-icon" id="popup-icon">🌍</span>
+          <span class="popup-title" id="popup-title">Event</span>
+          <button class="popup-close" id="popup-close">&times;</button>
+        </div>
+        <div class="popup-body">
+          <div class="popup-row">
+            <span class="popup-label">Location</span>
+            <span class="popup-value" id="popup-location">—</span>
+          </div>
+          <div class="popup-row" id="popup-state-row" style="display:none">
+            <span class="popup-label">State</span>
+            <span class="popup-value" id="popup-state">—</span>
+          </div>
+          <div class="popup-row" id="popup-mag-row">
+            <span class="popup-label">Magnitude</span>
+            <span class="popup-value popup-mag" id="popup-mag">—</span>
+          </div>
+          <div class="popup-row" id="popup-depth-row">
+            <span class="popup-label">Depth</span>
+            <span class="popup-value" id="popup-depth">—</span>
+          </div>
+          <div class="popup-row" id="popup-tsunami-row" style="display:none">
+            <span class="popup-label">Tsunami</span>
+            <span class="popup-value" style="color:var(--danger);font-weight:600">⚠️ Warning Issued</span>
+          </div>
+          <div class="popup-row" id="popup-temp-row" style="display:none">
+            <span class="popup-label">Temperature</span>
+            <span class="popup-value" id="popup-temp">—</span>
+          </div>
+          <div class="popup-row" id="popup-cond-row" style="display:none">
+            <span class="popup-label">Condition</span>
+            <span class="popup-value" id="popup-cond">—</span>
+          </div>
+          <div class="popup-row" id="popup-humidity-row" style="display:none">
+            <span class="popup-label">Humidity</span>
+            <span class="popup-value" id="popup-humidity">—</span>
+          </div>
+          <div class="popup-row" id="popup-wind-row" style="display:none">
+            <span class="popup-label">Wind</span>
+            <span class="popup-value" id="popup-wind">—</span>
+          </div>
+          <div class="popup-row">
+            <span class="popup-label">Time (IST)</span>
+            <span class="popup-value" id="popup-time">—</span>
+          </div>
+          <div class="popup-row">
+            <span class="popup-label">Source</span>
+            <span class="popup-value popup-source" id="popup-source">—</span>
+          </div>
+        </div>
+        <div class="popup-footer" id="popup-footer">
+          <a id="popup-link" href="#" target="_blank" rel="noopener" class="popup-link">View on USGS →</a>
+        </div>
+        <div style="padding:0 14px 13px">
+          <button class="popup-detail-btn" id="popup-detail-btn">📰 View Full Details + Latest News</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Analytics -->
+    <aside id="right-panel" class="panel glass-panel">
+      <div class="panel-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+        <span>Analytics</span>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-label">India Events</div>
+          <div class="stat-sub" id="stat-max-mag"></div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-value" id="stat-high">0</div>
+          <div class="stat-label">Major M5+</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-value" id="stat-med">0</div>
+          <div class="stat-label">Moderate M3–5</div>
+        </div>
+        <div class="stat-card safe">
+          <div class="stat-value" id="stat-low">0</div>
+          <div class="stat-label">Minor &lt;M3</div>
+        </div>
+      </div>
+
+      <!-- Seismic Zones Info -->
+      <div class="india-zones-card">
+        <div class="chart-title">🗺️ India Seismic Zones</div>
+        <div class="zone-list">
+          <div class="zone-row"><span class="zone-dot zone-v"></span><span class="zone-label">Zone V — Himalayan Belt,
+              NE India, Andaman</span></div>
+          <div class="zone-row"><span class="zone-dot zone-iv"></span><span class="zone-label">Zone IV — Gujarat Rift,
+              Kashmir Valley</span></div>
+          <div class="zone-row"><span class="zone-dot zone-iii"></span><span class="zone-label">Zone III — Deccan
+              Plateau, Coastal Areas</span></div>
+          <div class="zone-row"><span class="zone-dot zone-ii"></span><span class="zone-label">Zone II — Southern
+              Peninsula (Stable)</span></div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-title">⚡ Severity Distribution</div>
+        <div class="chart-wrap" style="height:150px">
+          <canvas id="severity-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-title">📈 24-Hour Activity</div>
+        <div class="chart-wrap" style="height:120px">
+          <canvas id="activity-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="weather-summary" id="weather-summary">
+        <div class="chart-title">🌤️ India Weather (OWM Live)</div>
+        <div id="weather-list" class="weather-list">
+          <div class="weather-loading">Fetching India weather data...</div>
+        </div>
+      </div>
+
+      <!-- ══ IoT Sensor Nodes (ESP32) ══ -->
+      <div class="iot-nodes-section" id="iot-section">
+        <div class="chart-title" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+          <span>📡 ESP32 IoT Node <span class="iot-node-count" id="iot-online-count"></span></span>
+          <span id="iot-conn-badge" style="font-size:.62rem;padding:2px 8px;border-radius:10px;
+            background:rgba(68,68,68,.3);border:1px solid rgba(180,210,255,.1);color:rgba(180,210,255,.4)">
+            ⚫ Disconnected
+          </span>
+        </div>
+
+        <!-- Live IoT Command Card -->
+        <div id="iot-command-card" style="background:rgba(0,0,0,.25);border:1px solid rgba(0,255,136,.1);
+             border-radius:10px;padding:12px;margin-top:8px">
+
+          <!-- Current City Row -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span style="font-size:1.1rem">📍</span>
+            <div style="flex:1">
+              <div style="font-size:.65rem;color:rgba(180,210,255,.4);margin-bottom:1px">NODE LOCATION</div>
+              <div id="iot-current-city" style="font-size:.9rem;font-weight:700;color:#00ff88">
+                Not Connected
+              </div>
+            </div>
+            <button id="btn-shift-node" onclick="window._iotShiftOpen && window._iotShiftOpen()"
+              title="Shift ESP32 node to another city" style="font-size:.65rem;padding:4px 10px;border-radius:8px;border:1px solid rgba(0,212,255,.25);
+                     background:rgba(0,212,255,.07);color:#00d4ff;cursor:pointer;font-weight:600;
+                     transition:all .2s;white-space:nowrap">
+              ⇄ Shift Node
+            </button>
+          </div>
+
+          <!-- Sensor Readings -->
+          <div id="iot-readings-grid"
+            style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px">
+            <div class="iot-mini-card" style="background:rgba(255,255,255,.035);border-radius:6px;padding:7px 10px">
+              <div style="font-size:.6rem;color:rgba(180,210,255,.4)">TEMPERATURE</div>
+              <div id="iot-r-temp" style="font-size:1.1rem;font-weight:700;color:#e0eeff;margin-top:2px">—</div>
+            </div>
+            <div class="iot-mini-card" style="background:rgba(255,255,255,.035);border-radius:6px;padding:7px 10px">
+              <div style="font-size:.6rem;color:rgba(180,210,255,.4)">HUMIDITY</div>
+              <div id="iot-r-hum" style="font-size:1.1rem;font-weight:700;color:#00aaff;margin-top:2px">—</div>
+            </div>
+            <div class="iot-mini-card" style="background:rgba(255,255,255,.035);border-radius:6px;padding:7px 10px">
+              <div style="font-size:.6rem;color:rgba(180,210,255,.4)">RAIN STATUS</div>
+              <div id="iot-r-rain" style="font-size:.85rem;font-weight:700;color:#e0eeff;margin-top:2px">—</div>
+            </div>
+            <div class="iot-mini-card" style="background:rgba(255,255,255,.035);border-radius:6px;padding:7px 10px">
+              <div style="font-size:.6rem;color:rgba(180,210,255,.4)">SOIL SAT.</div>
+              <div id="iot-r-soil" style="font-size:.85rem;font-weight:700;color:#e0eeff;margin-top:2px">—</div>
+            </div>
+          </div>
+
+          <!-- Risk meter bars -->
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:.6rem;color:rgba(0,212,255,.5)">🌊 FLOOD</span>
+              <span id="iot-r-flood-pct" style="font-size:.6rem;color:rgba(180,210,255,.4)">0%</span>
+            </div>
+            <div style="height:4px;border-radius:2px;background:rgba(255,255,255,.06)">
+              <div id="iot-r-flood-bar"
+                style="height:4px;border-radius:2px;width:0%;background:#0088ff;transition:width .6s"></div>
+            </div>
+          </div>
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:.6rem;color:rgba(255,102,0,.6)">🌡️ HEAT</span>
+              <span id="iot-r-heat-pct" style="font-size:.6rem;color:rgba(180,210,255,.4)">0%</span>
+            </div>
+            <div style="height:4px;border-radius:2px;background:rgba(255,255,255,.06)">
+              <div id="iot-r-heat-bar"
+                style="height:4px;border-radius:2px;width:0%;background:#ff6600;transition:width .6s"></div>
+            </div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:.6rem;color:rgba(204,68,255,.6)">🌀 CYCLONE</span>
+              <span id="iot-r-cyc-pct" style="font-size:.6rem;color:rgba(180,210,255,.4)">0%</span>
+            </div>
+            <div style="height:4px;border-radius:2px;background:rgba(255,255,255,.06)">
+              <div id="iot-r-cyc-bar"
+                style="height:4px;border-radius:2px;width:0%;background:#cc44ff;transition:width .6s"></div>
+            </div>
+          </div>
+
+          <!-- Live alert log -->
+          <div id="iot-live-alerts" style="display:none;background:rgba(255,17,68,.06);border:1px solid rgba(255,17,68,.2);
+               border-radius:6px;padding:8px 10px;font-size:.7rem;color:#ff6680;margin-bottom:6px">
+          </div>
+
+          <!-- Last ping -->
+          <div id="iot-last-ping" style="font-size:.6rem;color:rgba(180,210,255,.25);text-align:right">
+            Last ping: —
+          </div>
+        </div>
+
+        <!-- Basic node list (hidden when rich card active) -->
+        <div id="iot-nodes-list" style="display:none"></div>
+      </div>
+
+      <!-- ══ IoT Detected Disasters ══ -->
+      <div class="iot-alerts-section" id="iot-alerts-section" style="display:none">
+        <div class="chart-title">⚡ IoT Detected <span id="iot-alert-count" style="color:var(--danger)"></span></div>
+        <div id="iot-alert-list"></div>
+      </div>
+
+
+      <div class="update-status">
+        <div class="update-row">
+          <span>Last updated:</span>
+          <span id="last-updated">—</span>
+        </div>
+        <div class="update-row">
+          <span>Next refresh:</span>
+          <span id="next-refresh">—</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="refresh-progress"></div>
+        </div>
+        <div class="update-row" style="margin-top:4px;opacity:0.6">
+          <span>Data sources:</span>
+          <span style="color:var(--success)">USGS · OWM · ESP32 IoT · 🇮🇳</span>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Alert Banner -->
+  <div id="alert-banner" class="alert-banner hidden">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-text" id="alert-text">Major seismic event detected!</div>
+    <button class="alert-close" id="alert-close">&times;</button>
+  </div>
+
+  <!-- ============ DETAIL MODAL ============ -->
+  <div id="detail-modal" class="hidden">
+    <div class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-header-icon" id="dm-icon">🌍</div>
+        <div class="detail-header-info">
+          <div class="detail-header-title" id="dm-title">Event Details</div>
+          <div class="detail-header-sub" id="dm-sub">Loading...</div>
+          <div class="detail-header-badges" id="dm-badges"></div>
+        </div>
+        <button class="detail-close" id="detail-modal-close">&times;</button>
+      </div>
+      <div class="detail-tabs">
+        <button class="detail-tab active" data-tab="info">📋 Information</button>
+        <button class="detail-tab" data-tab="map">🗺️ Location Map</button>
+        <button class="detail-tab" data-tab="news">📰 Latest News</button>
+      </div>
+      <div class="detail-body" id="dm-tab-info">
+        <div class="detail-stats" id="dm-stats"></div>
+        <div id="dm-info-table" class="detail-info-table"></div>
+        <div id="dm-extra"></div>
+      </div>
+      <div class="detail-body single-col hidden" id="dm-tab-map">
+        <div class="detail-map" id="dm-map-wrap">
+          <div class="detail-map-label">📍 OpenStreetMap</div>
+          <iframe id="dm-map-frame" src="about:blank" loading="lazy" allowfullscreen></iframe>
+        </div>
+      </div>
+      <div class="detail-body single-col hidden" id="dm-tab-news">
+        <div class="detail-news">
+          <div class="detail-news-header">
+            <span class="detail-news-title">📰 Latest Related News</span>
+            <span class="news-source-badge" id="dm-news-source">Fetching...</span>
+          </div>
+          <div id="dm-news-list">
+            <div class="news-loading">
+              <div class="news-spinner"></div>Searching for latest news...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="assets/js/india_geo.js"></script>
+  <script src="assets/js/india_map.js"></script>
+  <script src="assets/js/heatwave.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/iot_integration.js"></script>
+  <script src="assets/js/iot_status.js"></script>
+  <script src="assets/js/auth_guard.js"></script>
+
+  <script>
+    /* -- India Location Search for admin index.html -- */
+    (function () {
+      /* Delay init until window.load so IndiaMap.flyTo is ready */
+      window.addEventListener('load', function () {
+        const inp = document.getElementById('search-input');
+        const dd = document.getElementById('search-dropdown');
+        if (!inp || !dd || typeof searchIndia === 'undefined') return;
+
+        const TYPE_ICON = { state: '🗺️', district: '📍', city: '🏙️' };
+        const TYPE_COL = { state: '#00d4ff', district: '#00e5a0', city: 'rgba(180,210,255,.75)' };
+        let active = -1, results = [], _locMode = false, _crumb = null;
+
+        function render(list) {
+          results = list; active = -1;
+          if (!list.length) { dd.style.display = 'none'; return; }
+          dd.innerHTML = list.map((e, i) => `
+            <div class="sd-item" data-i="${i}" style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;border-bottom:1px solid rgba(0,212,255,.06);transition:background .15s">
+              <span style="font-size:13px">${TYPE_ICON[e.type] || '📍'}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:.82rem;font-weight:600;color:${TYPE_COL[e.type] || '#e0eeff'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}</div>
+                ${e.type !== 'state' ? `<div style="font-size:.65rem;color:rgba(180,210,255,.4);margin-top:1px">${e.state}${e.district && e.type === 'city' ? ' › ' + e.district : ''}</div>` : ''}
+              </div>
+              <span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:3px;background:rgba(0,212,255,.07);color:rgba(0,212,255,.6);flex-shrink:0;font-family:monospace;text-transform:uppercase">${e.type}</span>
+            </div>`).join('');
+          dd.style.display = 'block';
+          dd.querySelectorAll('.sd-item').forEach(el => {
+            el.addEventListener('mouseenter', () => el.style.background = 'rgba(0,212,255,.07)');
+            el.addEventListener('mouseleave', () => el.style.background = 'transparent');
+            el.addEventListener('mousedown', () => select(+el.dataset.i));
+          });
+        }
+
+        function select(i) {
+          const e = results[i];
+          if (!e) return;
+          dd.style.display = 'none';
+          _locMode = true;
+
+          const zoom = e.type === 'state' ? 7 : e.type === 'district' ? 10 : 12;
+
+          /* Delegate to app.js gotoLocation — handles:
+             1. clear input immediately
+             2. IndiaMap.flyTo (3D swoop: pitch 55, bearing -8, 1600ms)
+             3. find nearest disaster within 300km
+             4. show its side-panel popup + highlight in feed              */
+          if (window.gotoLocation) {
+            window.gotoLocation(e.lat, e.lon, e.name, zoom);
+          } else {
+            try { if (window.IndiaMap) IndiaMap.flyTo(e.lat, e.lon, zoom); } catch (_) { }
+          }
+
+          /* Floating breadcrumb above the map */
+          if (_crumb) _crumb.remove();
+          _crumb = document.createElement('div');
+          _crumb.style.cssText = 'position:fixed;top:62px;left:50%;transform:translateX(-50%);background:rgba(4,14,36,.96);border:1px solid rgba(0,212,255,.22);border-radius:20px;padding:7px 20px;font-size:.82rem;font-weight:600;color:#00d4ff;z-index:9999;pointer-events:none;box-shadow:0 4px 20px rgba(0,212,255,.18);backdrop-filter:blur(12px);white-space:nowrap';
+          _crumb.innerHTML = `${TYPE_ICON[e.type] || '📍'} Viewing: <strong>${e.name}</strong> <span style="font-size:.62rem;color:rgba(0,212,255,.5);font-family:monospace;margin-left:6px">${e.type.toUpperCase()}</span>`;
+          document.body.appendChild(_crumb);
+          setTimeout(() => {
+            if (_crumb) { _crumb.style.transition = 'opacity .4s'; _crumb.style.opacity = '0'; setTimeout(() => { if (_crumb) { _crumb.remove(); _crumb = null; } }, 400); }
+          }, 3500);
+
+          setTimeout(() => { _locMode = false; }, 500);
+          inp.blur();
+        }
+
+
+        inp.addEventListener('input', () => { if (!_locMode) render(searchIndia(inp.value, 8)); });
+        inp.addEventListener('keydown', ev => {
+          if (ev.key === 'ArrowDown') { active = Math.min(active + 1, results.length - 1); _highlight(); ev.preventDefault(); }
+          if (ev.key === 'ArrowUp') { active = Math.max(active - 1, 0); _highlight(); ev.preventDefault(); }
+          if (ev.key === 'Enter' && results.length) { select(active >= 0 ? active : 0); ev.stopImmediatePropagation(); }
+          if (ev.key === 'Escape') { dd.style.display = 'none'; }
+        });
+        inp.addEventListener('blur', () => setTimeout(() => { dd.style.display = 'none'; }, 200));
+        inp.addEventListener('focus', () => { if (inp.value.length >= 2 && !_locMode) render(searchIndia(inp.value, 8)); });
+
+        function _highlight() {
+          dd.querySelectorAll('.sd-item').forEach((el, i) => {
+            el.style.background = i === active ? 'rgba(0,212,255,.12)' : 'transparent';
+          });
+          const ael = dd.querySelectorAll('.sd-item')[active];
+          if (ael) ael.scrollIntoView({ block: 'nearest' });
+        }
+      });
+    })();
+  </script>
+</body>
+
+</html>

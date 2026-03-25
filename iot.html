@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DICC IoT — Hyperlocal Multi-Disaster Intelligence System</title>
+    <meta name="description"
+        content="Real-time IoT-powered disaster monitoring combining ESP32 sensors with global APIs for flood, heatwave, and cyclone detection across India." />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@600;700;800&display=swap"
+        rel="stylesheet" />
+
+    <!-- Three.js r128 (has UMD OrbitControls) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js + GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+    <link rel="stylesheet" href="assets/css/iot_style.css" />
+</head>
+
+<body>
+
+    <!-- ══════════════ LOADING SCREEN ══════════════ -->
+    <div id="iot-loading">
+        <div class="loading-rings">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+        </div>
+        <div class="loading-title">DICC IoT INDIA</div>
+        <div class="loading-sub">Hyperlocal Multi-Disaster Intelligence System</div>
+        <div class="loading-prog-wrap">
+            <div class="loading-prog-bar" id="ld-bar"></div>
+        </div>
+        <div class="loading-step" id="ld-step">Initializing...</div>
+    </div>
+
+    <!-- ══════════════ ALERT BANNER ══════════════ -->
+    <div id="alert-banner" class="alert-banner hidden">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-text">Disaster detected near your location</div>
+        <div class="alert-dist"></div>
+        <button class="alert-close-btn" id="alert-close">✕</button>
+    </div>
+
+    <!-- ══════════════ TOP BAR ══════════════ -->
+    <header id="iot-topbar">
+        <!-- Brand -->
+        <a href="index.html" class="tb-back-btn" title="Back to India Map">
+            ← Map
+        </a>
+        <div class="tb-brand">
+            <svg class="tb-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                <path d="M2 12h20" />
+            </svg>
+            <div>
+                <div class="tb-name">DICC IoT INDIA</div>
+                <span class="tb-tag">Hyperlocal Multi-Disaster Intelligence</span>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="tb-filters">
+            <button class="flt-btn active" data-type="all">
+                <span class="flt-dot" style="background:#00d4ff"></span>All
+            </button>
+            <button class="flt-btn" data-type="earthquake">
+                <span class="flt-dot" style="background:#ff1144"></span>Earthquake
+            </button>
+            <button class="flt-btn" data-type="flood">
+                <span class="flt-dot" style="background:#0088ff"></span>Flood
+            </button>
+            <button class="flt-btn" data-type="heatwave">
+                <span class="flt-dot" style="background:#ff6600"></span>Heatwave
+            </button>
+            <button class="flt-btn" data-type="cyclone">
+                <span class="flt-dot" style="background:#cc44ff"></span>Cyclone
+            </button>
+        </div>
+
+        <div class="tb-sep"></div>
+
+        <!-- Search -->
+        <div class="tb-search-wrap">
+            <svg class="tb-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+            </svg>
+            <input type="text" id="iot-search" class="tb-search" placeholder="Search disasters..." />
+        </div>
+
+        <!-- Location -->
+        <button class="tb-loc-btn" id="loc-btn">📍 My Location</button>
+
+        <!-- Live -->
+        <div class="live-pill">
+            <div class="live-dot"></div>LIVE
+            <span class="live-clock" id="iot-clock">--:--:-- IST</span>
+        </div>
+    </header>
+
+    <!-- ══════════════ MAIN LAYOUT ══════════════ -->
+    <div id="iot-layout">
+
+        <!-- ── LEFT — Live Disaster Feed ── -->
+        <aside class="iot-panel">
+            <div class="panel-hdr">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+                <span class="title">Live Disaster Feed</span>
+                <span class="badge" id="feed-count">0</span>
+            </div>
+            <div class="feed-controls">
+                <select class="feed-sel" id="feed-type-sel"
+                    onchange="document.querySelector('[data-type='+this.value+']')?.click()">
+                    <option value="all">All Types</option>
+                    <option value="earthquake">Earthquakes</option>
+                    <option value="flood">Flood</option>
+                    <option value="heatwave">Heatwave</option>
+                    <option value="cyclone">Cyclone</option>
+                </select>
+            </div>
+            <div class="feed-scroll" id="iot-feed">
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+            </div>
+        </aside>
+
+        <!-- ── CENTER — Globe / Map ── -->
+        <section id="center-panel">
+
+            <!-- View toggle -->
+            <div class="view-toggle">
+                <button class="vt-btn active" id="vt-globe">🌍 3D Globe</button>
+                <button class="vt-btn" id="vt-map">📍 Local Map</button>
+            </div>
+
+            <!-- Three.js Globe -->
+            <div id="globe-view">
+                <canvas id="globe-canvas"></canvas>
+            </div>
+
+            <!-- Leaflet Map -->
+            <div id="leaflet-view">
+                <div id="leaflet-map"></div>
+            </div>
+
+            <!-- Map controls -->
+            <div class="center-overlay">
+                <button class="ctrl-btn-sm" title="Zoom In" onclick="if(window.leafletMap)leafletMap.zoomIn()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35M11 8v6M8 11h6" />
+                    </svg>
+                </button>
+                <button class="ctrl-btn-sm" title="Zoom Out" onclick="if(window.leafletMap)leafletMap.zoomOut()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35M8 11h6" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Status bar -->
+            <div class="globe-status-bar">
+                <div class="globe-stat-pill">Events: <span id="stat-globe-count">—</span></div>
+                <div class="globe-stat-pill">IoT Nodes: <span id="stat-globe-iot">—</span></div>
+            </div>
+
+            <!-- Event Popup -->
+            <div id="event-popup" class="hidden">
+                <div class="popup-head">
+                    <div class="popup-icon" id="popup-icon">⚡</div>
+                    <div class="popup-ttl" id="popup-title">Event</div>
+                    <button class="popup-x" id="popup-close">✕</button>
+                </div>
+                <div class="popup-rows">
+                    <div class="popup-row"><span class="popup-lbl">Type</span><span class="popup-val"
+                            id="popup-type">—</span></div>
+                    <div class="popup-row"><span class="popup-lbl">Severity</span><span class="popup-val"
+                            id="popup-sev">—</span></div>
+                    <div class="popup-row"><span class="popup-lbl">Risk Score</span><span class="popup-val"
+                            id="popup-score">—</span></div>
+                    <div class="popup-row"><span class="popup-lbl">Magnitude</span><span class="popup-val"
+                            id="popup-mag">—</span></div>
+                    <div class="popup-row"><span class="popup-lbl">Source</span><span class="popup-val"
+                            id="popup-src">—</span></div>
+                    <div class="popup-row"><span class="popup-lbl">Time</span><span class="popup-val"
+                            id="popup-time">—</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── RIGHT — Analytics + IoT Nodes ── -->
+        <aside class="iot-panel right">
+            <div class="panel-hdr">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10" />
+                    <line x1="12" y1="20" x2="12" y2="4" />
+                    <line x1="6" y1="20" x2="6" y2="14" />
+                </svg>
+                <span class="title">Analytics + IoT Nodes</span>
+            </div>
+            <div class="right-scroll">
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-val" id="stat-total">0</div>
+                        <div class="stat-lbl">Total Events</div>
+                    </div>
+                    <div class="stat-card danger">
+                        <div class="stat-val" id="stat-critical">0</div>
+                        <div class="stat-lbl">Critical</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-val" id="stat-high">0</div>
+                        <div class="stat-lbl">High Risk</div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="stat-val" id="stat-iot">0</div>
+                        <div class="stat-lbl">IoT Online</div>
+                    </div>
+                </div>
+
+                <!-- Severity Chart -->
+                <div class="chart-section">
+                    <div class="section-title">Disaster Types</div>
+                    <div class="chart-wrap"><canvas id="sev-chart"></canvas></div>
+                    <div class="legend" style="margin-top:8px">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:#ff1144"></div>Earthquake
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:#0088ff"></div>Flood
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:#ff6600"></div>Heatwave
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:#cc44ff"></div>Cyclone
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Chart -->
+                <div class="chart-section">
+                    <div class="section-title">Risk Activity (Recent)</div>
+                    <div class="chart-wrap"><canvas id="act-chart"></canvas></div>
+                </div>
+
+                <!-- IoT Nodes -->
+                <div>
+                    <div class="section-title" style="margin-bottom:6px">
+                        📡 ESP32 Nodes
+                        <span style="color:#00d4ff;font-family:'JetBrains Mono',monospace"
+                            id="node-online-count"></span>
+                    </div>
+                    <div id="iot-nodes-list">
+                        <div class="skeleton"></div>
+                        <div class="skeleton"></div>
+                    </div>
+                </div>
+
+                <!-- Refresh bar -->
+                <div class="refresh-section">
+                    <div class="refresh-row"><span>Last updated</span><span id="last-upd">—</span></div>
+                    <div class="refresh-row"><span>Next refresh</span><span id="next-refresh">15s</span></div>
+                    <div class="refresh-track">
+                        <div class="refresh-fill" id="refresh-fill"></div>
+                    </div>
+                    <div class="refresh-row" style="margin-top:4px;opacity:0.5">
+                        <span>Sources:</span><span>USGS · OWM · ESP32 🇮🇳</span>
+                    </div>
+                </div>
+
+            </div><!-- /right-scroll -->
+        </aside>
+
+    </div><!-- /iot-layout -->
+
+    <!-- Scripts -->
+    <script src="assets/js/iot_globe.js"></script>
+    <script src="assets/js/iot_app.js"></script>
+
+</body>
+
+</html>

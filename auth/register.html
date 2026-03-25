@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register — DICC India</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            min-height: 100vh;
+            background: #030912;
+            color: #e0eeff;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-image: radial-gradient(ellipse at 20% 50%, rgba(0, 212, 255, .06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(0, 255, 136, .04) 0%, transparent 50%)
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(1px 1px at 10% 15%, rgba(255, 255, 255, .4) 0%, transparent 100%),
+                radial-gradient(1px 1px at 85% 30%, rgba(255, 255, 255, .3) 0%, transparent 100%),
+                radial-gradient(1px 1px at 50% 70%, rgba(255, 255, 255, .35) 0%, transparent 100%);
+            pointer-events: none;
+            z-index: 0
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 440px
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 24px
+        }
+
+        .brand-icon {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 6px
+        }
+
+        .brand-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            color: #00d4ff;
+            letter-spacing: 3px
+        }
+
+        .brand-sub {
+            font-size: .7rem;
+            color: rgba(180, 210, 255, .5);
+            letter-spacing: 1px;
+            margin-top: 3px
+        }
+
+        .card {
+            background: rgba(6, 18, 40, .88);
+            border: 1px solid rgba(0, 212, 255, .15);
+            border-radius: 14px;
+            padding: 28px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 60px rgba(0, 212, 255, .06), 0 24px 60px rgba(0, 0, 0, .5)
+        }
+
+        .card-title {
+            font-size: .95rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #e0eeff
+        }
+
+        .form-group {
+            margin-bottom: 13px
+        }
+
+        .form-label {
+            display: block;
+            font-size: .7rem;
+            color: rgba(180, 210, 255, .6);
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            margin-bottom: 5px
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(0, 212, 255, .15);
+            border-radius: 8px;
+            padding: 9px 12px;
+            color: #e0eeff;
+            font-size: .85rem;
+            outline: none;
+            transition: border-color .2s;
+            font-family: 'Inter', sans-serif
+        }
+
+        .form-input:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, .08)
+        }
+
+        .form-input::placeholder {
+            color: rgba(180, 210, 255, .3)
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px
+        }
+
+        /* Location block */
+        .loc-block {
+            background: rgba(0, 212, 255, .04);
+            border: 1px solid rgba(0, 212, 255, .1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 13px
+        }
+
+        .loc-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: space-between;
+            margin-bottom: 4px
+        }
+
+        .loc-title {
+            font-size: .72rem;
+            color: rgba(180, 210, 255, .7);
+            text-transform: uppercase;
+            letter-spacing: .5px
+        }
+
+        .loc-detect-btn {
+            padding: 4px 10px;
+            border-radius: 14px;
+            border: 1px solid rgba(0, 212, 255, .3);
+            background: rgba(0, 212, 255, .08);
+            color: #00d4ff;
+            font-size: .68rem;
+            cursor: pointer;
+            transition: all .2s
+        }
+
+        .loc-detect-btn:hover {
+            background: rgba(0, 212, 255, .2)
+        }
+
+        .loc-status {
+            font-size: .68rem;
+            color: rgba(180, 210, 255, .4);
+            margin-top: 2px;
+            font-family: 'JetBrains Mono', monospace
+        }
+
+        .loc-status.found {
+            color: #00e5a0
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: .87rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: all .2s;
+            margin-top: 4px
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #0055ff);
+            color: #000;
+            box-shadow: 0 0 24px rgba(0, 212, 255, .25)
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 32px rgba(0, 212, 255, .4);
+            transform: translateY(-1px)
+        }
+
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none
+        }
+
+        .msg {
+            padding: 10px 14px;
+            border-radius: 7px;
+            font-size: .78rem;
+            margin-bottom: 12px;
+            display: none
+        }
+
+        .msg.error {
+            background: rgba(255, 17, 68, .1);
+            border: 1px solid rgba(255, 17, 68, .3);
+            color: #ff4466
+        }
+
+        .msg.success {
+            background: rgba(0, 229, 160, .1);
+            border: 1px solid rgba(0, 229, 160, .3);
+            color: #00e5a0
+        }
+
+        .form-link {
+            text-align: center;
+            margin-top: 14px;
+            font-size: .76rem;
+            color: rgba(180, 210, 255, .5)
+        }
+
+        .form-link a {
+            color: #00d4ff;
+            text-decoration: none;
+            font-weight: 500
+        }
+
+        .spin {
+            display: inline-block;
+            width: 13px;
+            height: 13px;
+            border: 2px solid rgba(0, 0, 0, .3);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            vertical-align: middle;
+            margin-right: 5px
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        /* OTP Screen */
+        #otp-screen {
+            display: none
+        }
+
+        .otp-info {
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: .82rem;
+            color: rgba(180, 210, 255, .7);
+            line-height: 1.5
+        }
+
+        .dev-otp {
+            background: rgba(0, 255, 136, .08);
+            border: 1px solid rgba(0, 255, 136, .2);
+            border-radius: 6px;
+            padding: 8px 12px;
+            text-align: center;
+            font-size: 1.3rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            letter-spacing: 6px;
+            color: #00ff88;
+            margin: 12px 0
+        }
+
+        .dev-badge {
+            font-size: .62rem;
+            color: rgba(0, 255, 136, .5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-top: 3px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="brand">
+            <span class="brand-icon">🌐</span>
+            <div class="brand-name">DICC INDIA</div>
+            <div class="brand-sub">Disaster Intelligence Command Center</div>
+        </div>
+
+        <div class="card">
+            <!-- Registration Form -->
+            <div id="reg-screen">
+                <div class="card-title">📝 Create Your Alert Account</div>
+                <div class="msg" id="reg-msg"></div>
+                <form id="reg-form" autocomplete="on">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="name" class="form-input" placeholder="Arjun Sharma" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" id="email" class="form-input" placeholder="you@example.com" required />
+                    </div>
+                    <div class="input-row">
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" id="password" class="form-input" placeholder="Min 6 chars"
+                                required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Confirm</label>
+                            <input type="password" id="confirm" class="form-input" placeholder="Repeat" required />
+                        </div>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="loc-block">
+                        <div class="loc-row">
+                            <span class="loc-title">📍 Your Location (for alerts)</span>
+                            <button type="button" class="loc-detect-btn" id="detect-loc-btn">Auto-detect</button>
+                        </div>
+                        <div class="loc-status" id="loc-status">Location not set — alerts will use city name</div>
+                        <input type="hidden" id="lat" />
+                        <input type="hidden" id="lon" />
+                        <input type="hidden" id="city-hidden" />
+                        <div class="input-row" style="margin-top:6px">
+                            <div class="form-group" style="margin:0">
+                                <input type="text" id="city" class="form-input" placeholder="City (e.g. Nagpur)"
+                                    style="font-size:.8rem" />
+                            </div>
+                            <div class="form-group" style="margin:0">
+                                <input type="text" id="state" class="form-input" placeholder="State"
+                                    style="font-size:.8rem" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="reg-btn">Create Account &amp; Send OTP</button>
+                </form>
+            </div>
+
+            <!-- OTP Verification Screen -->
+            <div id="otp-screen">
+                <div class="card-title">📧 Verify Your Email</div>
+                <div class="msg" id="otp-msg"></div>
+                <div class="otp-info">
+                    An OTP has been sent to <strong id="otp-email-display"></strong>.<br />
+                    Enter it below to activate your account.
+                </div>
+                <div class="dev-otp" id="dev-otp-display" style="display:none">
+                    <span id="dev-otp-val"></span>
+                    <span class="dev-badge">🔧 Dev Mode — OTP shown for testing</span>
+                </div>
+                <form id="otp-form">
+                    <div class="form-group">
+                        <label class="form-label">6-Digit OTP</label>
+                        <input type="text" id="otp-input" class="form-input" placeholder="000000" maxlength="6"
+                            inputmode="numeric" pattern="[0-9]{6}"
+                            style="text-align:center;letter-spacing:8px;font-size:1.3rem;font-family:'JetBrains Mono',monospace"
+                            required />
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="otp-btn">Verify OTP</button>
+                </form>
+            </div>
+
+            <div class="form-link">Already have an account? <a href="login.html">Sign in</a></div>
+            <div class="form-link" style="margin-top:6px"><a href="../index.html">← Back to Dashboard</a></div>
+        </div>
+    </div>
+
+    <script>
+        let regEmail = '';
+
+        /* Auto-detect location */
+        document.getElementById('detect-loc-btn').addEventListener('click', () => {
+            const statusEl = document.getElementById('loc-status');
+            if (!navigator.geolocation) { statusEl.textContent = 'Geolocation not supported'; return; }
+            statusEl.textContent = '⏳ Detecting location...';
+            navigator.geolocation.getCurrentPosition(pos => {
+                document.getElementById('lat').value = pos.coords.latitude.toFixed(6);
+                document.getElementById('lon').value = pos.coords.longitude.toFixed(6);
+                statusEl.className = 'loc-status found';
+                statusEl.textContent = `✅ Located: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+            }, () => {
+                statusEl.textContent = 'Location access denied. Enter city manually.';
+            });
+        });
+
+        /* Registration form */
+        document.getElementById('reg-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const msg = document.getElementById('reg-msg');
+            const btn = document.getElementById('reg-btn');
+            const pass = document.getElementById('password').value;
+            const conf = document.getElementById('confirm').value;
+
+            if (pass !== conf) { showMsg(msg, '❌ Passwords do not match', 'error'); return; }
+            if (pass.length < 6) { showMsg(msg, '❌ Password must have ≥ 6 characters', 'error'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spin"></span>Creating account...';
+
+            try {
+                const res = await fetch('../api/register.php', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('name').value.trim(),
+                        email: document.getElementById('email').value.trim().toLowerCase(),
+                        password: pass,
+                        latitude: document.getElementById('lat').value || null,
+                        longitude: document.getElementById('lon').value || null,
+                        city: document.getElementById('city').value.trim(),
+                    }),
+                });
+                const data = await res.json();
+
+                if (data.ok) {
+                    regEmail = document.getElementById('email').value.trim();
+                    // Switch to OTP screen
+                    document.getElementById('reg-screen').style.display = 'none';
+                    document.getElementById('otp-screen').style.display = 'block';
+                    document.getElementById('otp-email-display').textContent = regEmail;
+                    if (data.dev_otp) {
+                        document.getElementById('dev-otp-display').style.display = 'block';
+                        document.getElementById('dev-otp-val').textContent = data.dev_otp;
+                    }
+                } else {
+                    showMsg(msg, '❌ ' + (data.error || 'Registration failed'), 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Create Account & Send OTP';
+                }
+            } catch (err) {
+                showMsg(msg, '❌ Network error. Check XAMPP is running.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Create Account & Send OTP';
+            }
+        });
+
+        /* OTP form */
+        document.getElementById('otp-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const msg = document.getElementById('otp-msg');
+            const btn = document.getElementById('otp-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spin"></span>Verifying...';
+
+            try {
+                const res = await fetch('../api/verify.php', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: regEmail, otp: document.getElementById('otp-input').value.trim() }),
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showMsg(msg, '✅ ' + data.message, 'success');
+                    setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+                } else {
+                    showMsg(msg, '❌ ' + (data.error || 'Verification failed'), 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Verify OTP';
+                }
+            } catch (err) {
+                showMsg(msg, '❌ Network error', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Verify OTP';
+            }
+        });
+
+        function showMsg(el, text, type) {
+            el.textContent = text;
+            el.className = 'msg ' + type;
+            el.style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>

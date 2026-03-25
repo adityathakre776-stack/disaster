@@ -1,0 +1,1116 @@
+/* ============================================================
+   iot_style.css — IoT Hyperlocal Dashboard Theme
+   DICC India — Disaster Intelligence Command Center
+============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@600;700;800&display=swap');
+
+/* ── CSS Variables ─────────────────────────────────────────── */
+:root {
+    --bg-deep: #030912;
+    --bg-panel: rgba(6, 18, 40, 0.82);
+    --bg-card: rgba(10, 28, 60, 0.70);
+    --border: rgba(0, 200, 255, 0.12);
+    --accent: #00d4ff;
+    --accent2: #00ff88;
+    --danger: #ff1144;
+    --warning: #ff6600;
+    --yellow: #ffd700;
+    --purple: #cc44ff;
+    --success: #00e880;
+    --text: #e0eeff;
+    --text-dim: rgba(180, 210, 255, 0.55);
+    --glow: 0 0 20px rgba(0, 212, 255, 0.18);
+
+    /* Risk colours */
+    --risk-flood: #0088ff;
+    --risk-heatwave: #ff6600;
+    --risk-cyclone: #cc44ff;
+    --risk-eq: #ff1144;
+}
+
+/* ── Reset ─────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+}
+
+/* ── Loading Screen ─────────────────────────────────────────── */
+#iot-loading {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-deep);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.loading-rings {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.loading-rings .ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    animation: spin 2s linear infinite;
+}
+
+.ring-1 {
+    border-top-color: var(--accent);
+    animation-duration: 1.4s;
+}
+
+.ring-2 {
+    inset: 10px;
+    border-top-color: var(--accent2);
+    animation-duration: 1.9s;
+    animation-direction: reverse;
+}
+
+.ring-3 {
+    inset: 20px;
+    border-top-color: var(--yellow);
+    animation-duration: 2.4s;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.3rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+}
+
+.loading-sub {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+}
+
+.loading-prog-wrap {
+    width: 240px;
+    height: 3px;
+    background: rgba(0, 212, 255, 0.12);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.loading-prog-bar {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.4s ease;
+}
+
+.loading-step {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Top Bar ────────────────────────────────────────────────── */
+#iot-topbar {
+    height: 52px;
+    background: rgba(4, 14, 34, 0.96);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 16px;
+    position: relative;
+    z-index: 100;
+    flex-shrink: 0;
+}
+
+.tb-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.tb-logo {
+    width: 26px;
+    height: 26px;
+    color: var(--accent);
+}
+
+.tb-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    white-space: nowrap;
+}
+
+.tb-tag {
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    line-height: 1;
+    display: block;
+}
+
+.tb-filters {
+    display: flex;
+    gap: 6px;
+    margin: 0 8px;
+}
+
+.flt-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.flt-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0, 212, 255, 0.08);
+}
+
+.flt-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+}
+
+.flt-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tb-sep {
+    flex: 1;
+}
+
+.tb-search-wrap {
+    position: relative;
+}
+
+.tb-search {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px 5px 32px;
+    color: var(--text);
+    font-size: 0.75rem;
+    width: 180px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.tb-search:focus {
+    border-color: var(--accent);
+}
+
+.tb-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    color: var(--text-dim);
+}
+
+.tb-loc-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tb-loc-btn.located {
+    border-color: var(--accent2);
+    color: var(--accent2);
+}
+
+.tb-loc-btn:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.live-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+}
+
+.live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: blink 1.2s ease-in-out infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.2;
+    }
+}
+
+.live-clock {
+    color: var(--accent);
+}
+
+.tb-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.tb-back-btn:hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+}
+
+/* ── Layout ──────────────────────────────────────────────────── */
+#iot-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr 300px;
+    grid-template-rows: 1fr;
+    height: calc(100vh - 52px);
+    overflow: hidden;
+    gap: 0;
+}
+
+/* ── Glass Panel Base ────────────────────────────────────────── */
+.iot-panel {
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.iot-panel.right {
+    border-right: none;
+    border-left: 1px solid var(--border);
+}
+
+.panel-hdr {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.panel-hdr svg {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+}
+
+.panel-hdr .title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--text);
+}
+
+.panel-hdr .badge {
+    margin-left: auto;
+    background: rgba(0, 212, 255, 0.12);
+    color: var(--accent);
+    font-size: 0.65rem;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Left Panel — Disaster Feed ─────────────────────────────── */
+.feed-controls {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.feed-sel {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    outline: none;
+}
+
+.feed-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+}
+
+.feed-scroll::-webkit-scrollbar {
+    width: 3px;
+}
+
+.feed-scroll::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+}
+
+.feed-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    background: var(--bg-card);
+}
+
+.feed-item:hover {
+    border-color: var(--accent);
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.feed-item.selected {
+    border-color: var(--accent);
+    background: rgba(0, 212, 255, 0.08);
+}
+
+.feed-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.feed-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.feed-label {
+    font-size: 0.76rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.feed-meta {
+    font-size: 0.66rem;
+    color: var(--text-dim);
+    margin-top: 2px;
+}
+
+.feed-sev {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    align-self: flex-start;
+    font-family: 'JetBrains Mono', monospace;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.sev-CRITICAL {
+    background: rgba(255, 17, 68, 0.18);
+    color: var(--danger);
+}
+
+.sev-HIGH {
+    background: rgba(255, 102, 0, 0.18);
+    color: var(--warning);
+}
+
+.sev-MEDIUM {
+    background: rgba(255, 215, 0, 0.15);
+    color: var(--yellow);
+}
+
+.sev-LOW {
+    background: rgba(0, 232, 128, 0.1);
+    color: var(--success);
+}
+
+.feed-empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+}
+
+/* ── Center — Globe / Map ────────────────────────────────────── */
+#center-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.view-toggle {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    display: flex;
+    background: rgba(3, 9, 18, 0.8);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px;
+    gap: 2px;
+    backdrop-filter: blur(12px);
+}
+
+.vt-btn {
+    padding: 5px 16px;
+    border-radius: 16px;
+    border: none;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+}
+
+.vt-btn.active {
+    background: var(--accent);
+    color: #000;
+    font-weight: 600;
+}
+
+#globe-view {
+    flex: 1;
+    position: relative;
+}
+
+#globe-canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    cursor: grab;
+}
+
+#globe-canvas:active {
+    cursor: grabbing;
+}
+
+#leaflet-view {
+    flex: 1;
+    position: relative;
+    display: none;
+}
+
+#leaflet-map {
+    width: 100%;
+    height: 100%;
+}
+
+.center-overlay {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ctrl-btn-sm {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(4, 14, 34, 0.85);
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s;
+}
+
+.ctrl-btn-sm:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.ctrl-btn-sm svg {
+    width: 14px;
+    height: 14px;
+}
+
+.globe-status-bar {
+    position: absolute;
+    bottom: 14px;
+    right: 14px;
+    z-index: 50;
+    display: flex;
+    gap: 8px;
+    font-size: 0.65rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+}
+
+.globe-stat-pill {
+    background: rgba(4, 14, 34, 0.8);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    backdrop-filter: blur(8px);
+}
+
+/* ── Event Popup (center overlay) ───────────────────────────── */
+#event-popup {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    width: 280px;
+    background: rgba(4, 14, 34, 0.95);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+#event-popup.hidden {
+    display: none;
+}
+
+.popup-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.popup-icon {
+    font-size: 1.3rem;
+}
+
+.popup-ttl {
+    flex: 1;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.popup-x {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.popup-rows {
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.popup-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.73rem;
+}
+
+.popup-lbl {
+    color: var(--text-dim);
+}
+
+.popup-val {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+}
+
+/* ── Alert Banner ───────────────────────────────────────────── */
+#alert-banner {
+    position: fixed;
+    top: 58px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    min-width: 320px;
+    max-width: 600px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    animation: slideDown 0.3s ease-out;
+    transition: opacity 0.3s;
+}
+
+#alert-banner.hidden {
+    display: none;
+}
+
+#alert-banner.crit {
+    background: rgba(255, 17, 68, 0.15);
+    border-color: var(--danger);
+}
+
+#alert-banner.high {
+    background: rgba(255, 102, 0, 0.15);
+    border-color: var(--warning);
+}
+
+#alert-banner.med {
+    background: rgba(255, 215, 0, 0.12);
+    border-color: var(--yellow);
+}
+
+.alert-icon {
+    font-size: 1.2rem;
+}
+
+.alert-text {
+    flex: 1;
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+
+.alert-dist {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
+.alert-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* ── Right Panel — Analytics + IoT ──────────────────────────── */
+.right-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.right-scroll::-webkit-scrollbar {
+    width: 3px;
+}
+
+.right-scroll::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+}
+
+/* Stats grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+
+.stat-card:hover {
+    border-color: var(--accent);
+}
+
+.stat-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.stat-lbl {
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+.stat-card.danger .stat-val {
+    color: var(--danger);
+}
+
+.stat-card.warning .stat-val {
+    color: var(--warning);
+}
+
+.stat-card.purple .stat-val {
+    color: var(--purple);
+}
+
+/* Section title */
+.section-title {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+/* IoT Node cards */
+.iot-node-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    transition: border-color 0.2s;
+}
+
+.iot-node-card.online {
+    border-left: 3px solid var(--accent2);
+}
+
+.iot-node-card.offline {
+    border-left: 3px solid rgba(255, 255, 255, 0.1);
+    opacity: 0.65;
+}
+
+.iot-node-card.alert {
+    border-left: 3px solid var(--danger);
+}
+
+.node-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.node-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.node-status-dot.online {
+    background: var(--accent2);
+    box-shadow: 0 0 6px var(--accent2);
+}
+
+.node-status-dot.offline {
+    background: #555;
+}
+
+.node-status-dot.alert {
+    background: var(--danger);
+    animation: blink 0.8s infinite;
+}
+
+.node-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.node-city {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    margin-left: auto;
+}
+
+.node-readings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+}
+
+.node-reading {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    padding: 5px 7px;
+}
+
+.nr-lbl {
+    font-size: 0.58rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+}
+
+.nr-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.nr-val.hot {
+    color: var(--warning);
+}
+
+.nr-val.flood {
+    color: var(--risk-flood);
+}
+
+.nr-val.rain {
+    color: #55aaff;
+}
+
+.node-risks {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.risk-pill {
+    font-size: 0.6rem;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.risk-pill.flood {
+    background: rgba(0, 136, 255, 0.2);
+    color: #55aaff;
+}
+
+.risk-pill.heatwave {
+    background: rgba(255, 102, 0, 0.2);
+    color: var(--warning);
+}
+
+.risk-pill.cyclone {
+    background: rgba(204, 68, 255, 0.2);
+    color: var(--purple);
+}
+
+/* Risk gauge bar */
+.risk-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.risk-bar-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.risk-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+}
+
+.risk-bar-lbl {
+    font-size: 0.62rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+    width: 28px;
+    text-align: right;
+}
+
+/* Chart section */
+.chart-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.chart-wrap {
+    position: relative;
+    height: 120px;
+}
+
+/* Refresh bar */
+.refresh-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+.refresh-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.67rem;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+
+.refresh-row span:last-child {
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.refresh-track {
+    height: 3px;
+    background: rgba(0, 212, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.refresh-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    width: 0%;
+    transition: width 1s linear;
+}
+
+/* No-node placeholder */
+.no-iot {
+    text-align: center;
+    padding: 18px 10px;
+}
+
+.no-iot-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.no-iot h4 {
+    font-size: 0.8rem;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.no-iot p {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+.no-iot code {
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+}
+
+/* Legend */
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.67rem;
+    color: var(--text-dim);
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+/* Skeleton loader */
+.skeleton {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    height: 60px;
+    margin-bottom: 6px;
+}
+
+@keyframes shimmer {
+    to {
+        background-position: -200% 0;
+    }
+}
